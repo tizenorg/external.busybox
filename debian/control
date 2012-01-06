@@ -1,0 +1,585 @@
+Source: busybox
+Priority: optional
+Section: utils
+Maintainer: Rafal Krypa <r.krypa@samsung.com>
+Uploaders: Karol Lewandowski <k.lewandowsk@samsung.com>
+X-Maemo-Maintainer: Yauheni Kaliuta <yauheni.kaliuta@nokia.com>
+X-Original-Maintainer: Debian Install System Team <debian-boot@lists.debian.org>
+X-Original-Uploaders: Bastian Blank <waldi@debian.org>
+Build-Depends: debhelper (>> 5), python, quilt
+Standards-Version: 3.7.3
+
+Package: busybox
+Priority: required
+Essential: yes
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: ash, awk, bsdutils, coreutils, diffutils, editor, findutils, grep, gzip, hostname, less, man-browser, mount, sed, tar, telnet-client, traceroute, util-linux
+Replaces: ash, bsdutils, coreutils, diffutils, findutils, grep, gzip, hostname, mount, sed, tar, util-linux
+Conflicts: ash, bsdutils, coreutils, diffutils, findutils, grep, gzip, hostname, mount, sed, tar, util-linux
+Description: Tiny utilities for small and embedded systems
+ BusyBox combines tiny versions of many common UNIX utilities into a single
+ small executable. It provides minimalist replacements for the most common
+ utilities you would usually find on your desktop system (i.e., ls, cp, mv,
+ mount, tar, etc.). The utilities in BusyBox generally have fewer options than
+ their full-featured GNU cousins; however, the options that are included
+ provide the expected functionality and behave very much like their GNU
+ counterparts.
+ .
+ This package installs:
+ - the BusyBox binary
+ - symlinks for tools included into it that correspond to binaries
+   in essential Debian packages
+ - alternatives from packages that don't have anything else
+ .
+ Symlinks to other tools included into BusyBox which correspond to binaries
+ in non-essential Debian packages are provided in separate symlink packages.
+ Those package are split and named according to the corresponding Debian
+ packages.
+
+Package: busybox-dbg
+Architecture: any
+Depends: busybox (= ${binary:Version})
+Section: devel
+Description: Debug symbols for BusyBox
+ Debug symbol file for BusyBox. BusyBox provides tiny utilities for small
+ and embedded systems.
+
+Package: busybox-symlinks-busybox
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Description: BusyBox specific symlinks
+ BusyBox symlinks for utilities without counterparts in Debian.
+ These are in separate package because they aren't essentials
+ (e.g. needed for system package upgrades).
+
+Package: busybox-symlinks-adduser
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: adduser
+Replaces: adduser
+Conflicts: adduser
+Description: BusyBox symlinks to provide 'adduser'
+ BusyBox symlinks for utilities corresponding to 'adduser' package.
+
+Package: busybox-symlinks-adjtimex
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: adjtimex
+Replaces: adjtimex
+Conflicts: adjtimex
+Description: BusyBox symlinks to provide 'adjtimex'
+ BusyBox symlinks for utilities corresponding to 'adjtimex' package.
+
+Package: busybox-symlinks-binutils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: binutils
+Replaces: binutils
+Conflicts: binutils
+Description: BusyBox symlinks to provide 'binutils'
+ BusyBox symlinks for utilities corresponding to 'binutils' package.
+
+Package: busybox-symlinks-bridge-utils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: bridge-utils
+Replaces: bridge-utils
+Conflicts: bridge-utils
+Description: BusyBox symlinks to provide 'bridge-utils'
+ BusyBox symlinks for utilities corresponding to 'bridge-utils' package.
+
+Package: busybox-symlinks-bsdmainutils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: bsdmainutils
+Replaces: bsdmainutils
+Conflicts: bsdmainutils
+Description: BusyBox symlinks to provide 'bsdmainutils'
+ BusyBox symlinks for utilities corresponding to 'bsdmainutils' package.
+
+Package: busybox-symlinks-bzip2
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: bzip2
+Replaces: bzip2
+Conflicts: bzip2
+Description: BusyBox symlinks to provide 'bzip2'
+ BusyBox symlinks for utilities corresponding to 'bzip2' package.
+
+Package: busybox-symlinks-console-tools
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: console-tools
+Replaces: console-tools
+Conflicts: console-tools
+Description: BusyBox symlinks to provide 'console-tools'
+ BusyBox symlinks for utilities corresponding to 'console-tools' package.
+
+Package: busybox-symlinks-cpio
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: cpio
+Replaces: cpio
+Conflicts: cpio
+Description: BusyBox symlinks to provide 'cpio'
+ BusyBox symlinks for utilities corresponding to 'cpio' package.
+
+Package: busybox-symlinks-cron
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: cron
+Replaces: cron
+Conflicts: cron
+Description: BusyBox symlinks to provide 'cron'
+ BusyBox symlinks for utilities corresponding to 'cron' package.
+
+Package: busybox-symlinks-daemontools
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: daemontools
+Replaces: daemontools
+Conflicts: daemontools
+Description: BusyBox symlinks to provide 'daemontools'
+ BusyBox symlinks for utilities corresponding to 'daemontools' package.
+
+Package: busybox-symlinks-dc
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: dc
+Replaces: dc
+Conflicts: dc
+Description: BusyBox symlinks to provide 'dc'
+ BusyBox symlinks for utilities corresponding to 'dc' package.
+
+Package: busybox-symlinks-dnsutils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: dnsutils
+Replaces: dnsutils
+Conflicts: dnsutils
+Description: BusyBox symlinks to provide 'dnsutils'
+ BusyBox symlinks for utilities corresponding to 'dnsutils' package.
+
+Package: busybox-symlinks-dosfstools
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: dosfstools
+Replaces: dosfstools
+Conflicts: dosfstools
+Description: BusyBox symlinks to provide 'dosfstools'
+ BusyBox symlinks for utilities corresponding to 'dosfstools' package.
+
+Package: busybox-symlinks-ed
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ed
+Replaces: ed
+Conflicts: ed
+Description: BusyBox symlinks to provide 'ed'
+ BusyBox symlinks for utilities corresponding to 'ed' package.
+
+Package: busybox-symlinks-eject
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: eject
+Replaces: eject
+Conflicts: eject
+Description: BusyBox symlinks to provide 'eject'
+ BusyBox symlinks for utilities corresponding to 'eject' package.
+
+Package: busybox-symlinks-fbset
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: fbset
+Replaces: fbset
+Conflicts: fbset
+Description: BusyBox symlinks to provide 'fbset'
+ BusyBox symlinks for utilities corresponding to 'fbset' package.
+
+Package: busybox-symlinks-fdflush
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: fdflush
+Replaces: fdflush
+Conflicts: fdflush
+Description: BusyBox symlinks to provide 'fdflush'
+ BusyBox symlinks for utilities corresponding to 'fdflush' package.
+
+Package: busybox-symlinks-hdparm
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: hdparm
+Replaces: hdparm
+Conflicts: hdparm
+Description: BusyBox symlinks to provide 'hdparm'
+ BusyBox symlinks for utilities corresponding to 'hdparm' package.
+
+Package: busybox-symlinks-ifupdown
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ifupdown
+Replaces: ifupdown
+Conflicts: ifupdown
+Description: BusyBox symlinks to provide 'ifupdown'
+ BusyBox symlinks for utilities corresponding to 'ifupdown' package.
+
+Package: busybox-symlinks-initscripts
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: initscripts
+Replaces: initscripts
+Conflicts: initscripts
+Description: BusyBox symlinks to provide 'initscripts'
+ BusyBox symlinks for utilities corresponding to 'initscripts' package.
+
+Package: busybox-symlinks-ipcalc
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ipcalc
+Replaces: ipcalc
+Conflicts: ipcalc
+Description: BusyBox symlinks to provide 'ipcalc'
+ BusyBox symlinks for utilities corresponding to 'ipcalc' package.
+
+Package: busybox-symlinks-iproute
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: iproute
+Replaces: iproute
+Conflicts: iproute
+Description: BusyBox symlinks to provide 'iproute'
+ BusyBox symlinks for utilities corresponding to 'iproute' package.
+
+Package: busybox-symlinks-ipsvd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ipsvd
+Replaces: ipsvd
+Conflicts: ipsvd
+Description: BusyBox symlinks to provide 'ipsvd'
+ BusyBox symlinks for utilities corresponding to 'ipsvd' package.
+
+Package: busybox-symlinks-iputils-arping
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: iputils-arping
+Replaces: iputils-arping
+Conflicts: iputils-arping
+Description: BusyBox symlinks to provide 'iputils-arping'
+ BusyBox symlinks for utilities corresponding to 'iputils-arping' package.
+
+Package: busybox-symlinks-iputils-ping
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: iputils-ping
+Replaces: iputils-ping
+Conflicts: iputils-ping
+Description: BusyBox symlinks to provide 'iputils-ping'
+ BusyBox symlinks for utilities corresponding to 'iputils-ping' package.
+
+Package: busybox-symlinks-klogd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: klogd
+Replaces: klogd
+Conflicts: klogd
+Description: BusyBox symlinks to provide 'klogd'
+ BusyBox symlinks for utilities corresponding to 'klogd' package.
+
+Package: busybox-symlinks-loadlin
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: loadlin
+Replaces: loadlin
+Conflicts: loadlin
+Description: BusyBox symlinks to provide 'loadlin'
+ BusyBox symlinks for utilities corresponding to 'loadlin' package.
+
+Package: busybox-symlinks-lrzsz
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: lrzsz
+Replaces: lrzsz
+Conflicts: lrzsz
+Description: BusyBox symlinks to provide 'lrzsz'
+ BusyBox symlinks for utilities corresponding to 'lrzsz' package.
+
+Package: busybox-symlinks-lzma
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: lzma
+Replaces: lzma
+Conflicts: lzma
+Description: BusyBox symlinks to provide 'lzma'
+ BusyBox symlinks for utilities corresponding to 'lzma' package.
+
+Package: busybox-symlinks-lzop
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: lzop
+Replaces: lzop
+Conflicts: lzop
+Description: BusyBox symlinks to provide 'lzop'
+ BusyBox symlinks for utilities corresponding to 'lzop' package.
+
+Package: busybox-symlinks-module-init-tools
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: module-init-tools
+Replaces: module-init-tools
+Conflicts: module-init-tools
+Description: BusyBox symlinks to provide 'module-init-tools'
+ BusyBox symlinks for utilities corresponding to 'module-init-tools' package.
+
+Package: busybox-symlinks-mtd-utils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: mtd-utils
+Replaces: mtd-utils
+Conflicts: mtd-utils
+Description: BusyBox symlinks to provide 'mtd-utils'
+ BusyBox symlinks for utilities corresponding to 'mtd-utils' package.
+
+Package: busybox-symlinks-net-tools
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: net-tools
+Replaces: net-tools
+Conflicts: net-tools
+Description: BusyBox symlinks to provide 'net-tools'
+ BusyBox symlinks for utilities corresponding to 'net-tools' package.
+
+Package: busybox-symlinks-openbsd-inetd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: openbsd-inetd
+Replaces: openbsd-inetd
+Conflicts: openbsd-inetd
+Description: BusyBox symlinks to provide 'openbsd-inetd'
+ BusyBox symlinks for utilities corresponding to 'openbsd-inetd' package.
+
+Package: busybox-symlinks-passwd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: passwd
+Replaces: passwd
+Conflicts: passwd
+Description: BusyBox symlinks to provide 'passwd'
+ BusyBox symlinks for utilities corresponding to 'passwd' package.
+
+Package: busybox-symlinks-patch
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: patch
+Replaces: patch
+Conflicts: patch
+Description: BusyBox symlinks to provide 'patch'
+ BusyBox symlinks for utilities corresponding to 'patch' package.
+
+Package: busybox-symlinks-ppp
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ppp
+Replaces: ppp
+Conflicts: ppp
+Description: BusyBox symlinks to provide 'ppp'
+ BusyBox symlinks for utilities corresponding to 'ppp' package.
+
+Package: busybox-symlinks-procps
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: procps
+Replaces: procps
+Conflicts: procps
+Description: BusyBox symlinks to provide 'procps'
+ BusyBox symlinks for utilities corresponding to 'procps' package.
+
+Package: busybox-symlinks-psmisc
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: psmisc
+Replaces: psmisc
+Conflicts: psmisc
+Description: BusyBox symlinks to provide 'psmisc'
+ BusyBox symlinks for utilities corresponding to 'psmisc' package.
+
+Package: busybox-symlinks-rdate
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: rdate
+Replaces: rdate
+Conflicts: rdate
+Description: BusyBox symlinks to provide 'rdate'
+ BusyBox symlinks for utilities corresponding to 'rdate' package.
+
+Package: busybox-symlinks-realpath
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: realpath
+Replaces: realpath
+Conflicts: realpath
+Description: BusyBox symlinks to provide 'realpath'
+ BusyBox symlinks for utilities corresponding to 'realpath' package.
+
+Package: busybox-symlinks-rpm
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: rpm
+Replaces: rpm
+Conflicts: rpm
+Description: BusyBox symlinks to provide 'rpm'
+ BusyBox symlinks for utilities corresponding to 'rpm' package.
+
+Package: busybox-symlinks-runit
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: runit
+Replaces: runit
+Conflicts: runit
+Description: BusyBox symlinks to provide 'runit'
+ BusyBox symlinks for utilities corresponding to 'runit' package.
+
+Package: busybox-symlinks-sharutils
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: sharutils
+Replaces: sharutils
+Conflicts: sharutils
+Description: BusyBox symlinks to provide 'sharutils'
+ BusyBox symlinks for utilities corresponding to 'sharutils' package.
+
+Package: busybox-symlinks-ssmtp
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: ssmtp
+Replaces: ssmtp
+Conflicts: ssmtp
+Description: BusyBox symlinks to provide 'ssmtp'
+ BusyBox symlinks for utilities corresponding to 'ssmtp' package.
+
+Package: busybox-symlinks-sysklogd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: sysklogd
+Replaces: sysklogd
+Conflicts: sysklogd
+Description: BusyBox symlinks to provide 'sysklogd'
+ BusyBox symlinks for utilities corresponding to 'sysklogd' package.
+
+Package: busybox-symlinks-telnetd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: telnetd
+Replaces: telnetd
+Conflicts: telnetd
+Description: BusyBox symlinks to provide 'telnetd'
+ BusyBox symlinks for utilities corresponding to 'telnetd' package.
+
+Package: busybox-symlinks-tftp
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: tftp
+Replaces: tftp
+Conflicts: tftp
+Description: BusyBox symlinks to provide 'tftp'
+ BusyBox symlinks for utilities corresponding to 'tftp' package.
+
+Package: busybox-symlinks-time
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: time
+Replaces: time
+Conflicts: time
+Description: BusyBox symlinks to provide 'time'
+ BusyBox symlinks for utilities corresponding to 'time' package.
+
+Package: busybox-symlinks-tofrodos
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: tofrodos
+Replaces: tofrodos
+Conflicts: tofrodos
+Description: BusyBox symlinks to provide 'tofrodos'
+ BusyBox symlinks for utilities corresponding to 'tofrodos' package.
+
+Package: busybox-symlinks-udhcpc
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: udhcpc
+Replaces: udhcpc
+Conflicts: udhcpc
+Description: BusyBox symlinks to provide 'udhcpc'
+ BusyBox symlinks for utilities corresponding to 'udhcpc' package.
+
+Package: busybox-symlinks-udhcpd
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: udhcpd
+Replaces: udhcpd
+Conflicts: udhcpd
+Description: BusyBox symlinks to provide 'udhcpd'
+ BusyBox symlinks for utilities corresponding to 'udhcpd' package.
+
+Package: busybox-symlinks-unzip
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: unzip
+Replaces: unzip
+Conflicts: unzip
+Description: BusyBox symlinks to provide 'unzip'
+ BusyBox symlinks for utilities corresponding to 'unzip' package.
+
+Package: busybox-symlinks-vlan
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: vlan
+Replaces: vlan
+Conflicts: vlan
+Description: BusyBox symlinks to provide 'vlan'
+ BusyBox symlinks for utilities corresponding to 'vlan' package.
+
+Package: busybox-symlinks-vlock
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: vlock
+Replaces: vlock
+Conflicts: vlock
+Description: BusyBox symlinks to provide 'vlock'
+ BusyBox symlinks for utilities corresponding to 'vlock' package.
+
+Package: busybox-symlinks-watchdog
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: watchdog
+Replaces: watchdog
+Conflicts: watchdog
+Description: BusyBox symlinks to provide 'watchdog'
+ BusyBox symlinks for utilities corresponding to 'watchdog' package.
+
+Package: busybox-symlinks-wget
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: wget
+Replaces: wget
+Conflicts: wget
+Description: BusyBox symlinks to provide 'wget'
+ BusyBox symlinks for utilities corresponding to 'wget' package.
+
+Package: busybox-symlinks-xterm
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: xterm
+Replaces: xterm
+Conflicts: xterm
+Description: BusyBox symlinks to provide 'xterm'
+ BusyBox symlinks for utilities corresponding to 'xterm' package.
+
+Package: busybox-symlinks-zcip
+Architecture: all
+Depends: busybox (= ${binary:Version})
+Provides: zcip
+Replaces: zcip
+Conflicts: zcip
+Description: BusyBox symlinks to provide 'zcip'
+ BusyBox symlinks for utilities corresponding to 'zcip' package.

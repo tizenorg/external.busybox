@@ -1,0 +1,3 @@
+bin/busybox usr/bin/cal
+bin/busybox usr/bin/hd
+bin/busybox usr/bin/hexdump

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+update-alternatives --remove pager /bin/more
+update-alternatives --remove man /bin/busybox
+update-alternatives --remove traceroute /bin/busybox
+update-alternatives --remove pager /usr/bin/less
+update-alternatives --remove telnet /bin/busybox
+update-alternatives --remove awk /bin/busybox
+update-alternatives --remove vi /bin/busybox
+dpkg-divert --package busybox --remove /bin/sh

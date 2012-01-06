@@ -1,0 +1,12 @@
+diff --git a/networking/interface.c b/networking/interface.c
+index ef187be..6cb1afa 100644
+--- a/networking/interface.c
++++ b/networking/interface.c
+@@ -623,6 +623,7 @@ static int if_fetch(struct interface *ife)
+ 
+ 	strncpy_IFNAMSIZ(ifr.ifr_name, ifname);
+ 	memset(ife->hwaddr, 0, 32);
++	memset(ifr.ifr_hwaddr.sa_data, 0, 8);
+ 	if (ioctl(skfd, SIOCGIFHWADDR, &ifr) >= 0)
+ 		memcpy(ife->hwaddr, ifr.ifr_hwaddr.sa_data, 8);
+ 
