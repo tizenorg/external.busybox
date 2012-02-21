@@ -1,3 +1,11 @@
+busybox (3:1.17.1-10slp2+s6-1) unstable; urgency=low
+
+  * Version up to prevent fullbuild error
+  * Git : tizen1/pkgs/b/busybox
+  * Tag : busybox_3:1.17.1-10slp2+s6-1
+
+ -- Jinhyuk Lee <jjim.lee@samsung.com>  Wed, 22 Feb 2012 08:45:04 +0900
+
 busybox (3:1.17.1-10slp2+s6) unstable; urgency=low
 
   * Remove build dependency on systemd 
