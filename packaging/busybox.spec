@@ -1,3 +1,4 @@
+#sbs-git:slp/pkgs/b/busybox busybox 1.17.1 2af797aea95edf3accab73b53dd8075b78e75ddd
 Summary: Single binary providing simplified versions of system commands
 Name: busybox
 Version: 1.17.1
@@ -56,8 +57,7 @@ Patch33: udhcpc-fast-request.patch
 
 URL: http://www.busybox.net
 
-Provides: ash awk bsdutils coreutils diffutils editor findutils grep gzip hostname less man-browser mount sed tar telnet-client traceroute util-linux
-Conflicts: ash awk bsdutils coreutils diffutils editor findutils grep gzip hostname less man-browser mount sed tar telnet-client traceroute util-linux
+
 
 
 %define debug_package %{nil}  
@@ -89,8 +89,6 @@ Requires: %{name} = %{version}-%{release}
 Group: tools
 Summary: BusyBox symlinks to provide 'adduser'
 Requires: %{name} = %{version}-%{release}
-Provides: adduser
-Conflicts: adduser
 
 %description symlinks-adduser
 BusyBox symlinks for utilities corresponding to 'adduser' package.
@@ -99,8 +97,6 @@ BusyBox symlinks for utilities corresponding to 'adduser' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'adjtimex'
 Requires: %{name} = %{version}-%{release}
-Provides: adjtimex
-Conflicts: adjtimex
 
 %description symlinks-adjtimex
 BusyBox symlinks for utilities corresponding to 'adjtimex' package.
@@ -109,8 +105,6 @@ BusyBox symlinks for utilities corresponding to 'adjtimex' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'binutils'
 Requires: %{name} = %{version}-%{release}
-Provides: binutils
-Conflicts: binutils
 
 %description symlinks-binutils
 BusyBox symlinks for utilities corresponding to 'binutils' package.
@@ -118,8 +112,6 @@ BusyBox symlinks for utilities corresponding to 'binutils' package.
 %package symlinks-bridge-utils
 Group: tools
 Summary: BusyBox symlinks to provide 'bridge-utils'
-Provides: bridge-utils
-Conflicts: bridge-utils
 
 %description symlinks-bridge-utils
 BusyBox symlinks for utilities corresponding to 'bridge-utils' package.
@@ -128,8 +120,6 @@ BusyBox symlinks for utilities corresponding to 'bridge-utils' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'bsdmainutils'
 Requires: %{name} = %{version}-%{release}
-Provides: bsdmainutils
-Conflicts: bsdmainutils
 
 %description symlinks-bsdmainutils
 BusyBox symlinks for utilities corresponding to 'bsdmainutils' package.
@@ -138,8 +128,6 @@ BusyBox symlinks for utilities corresponding to 'bsdmainutils' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'bzip2'
 Requires: %{name} = %{version}-%{release}
-Provides: bzip2
-Conflicts: bzip2
 
 %description symlinks-bzip2
 BusyBox symlinks for utilities corresponding to 'bzip2' package.
@@ -148,8 +136,6 @@ BusyBox symlinks for utilities corresponding to 'bzip2' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'console-tools'
 Requires: %{name} = %{version}-%{release}
-Provides: console-tools
-Conflicts: console-tools
 
 %description symlinks-console-tools
 BusyBox symlinks for utilities corresponding to 'console-tools' package.
@@ -158,8 +144,6 @@ BusyBox symlinks for utilities corresponding to 'console-tools' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'cpio'
 Requires: %{name} = %{version}-%{release}
-Provides: cpio
-Conflicts: cpio
 
 %description symlinks-cpio
 BusyBox symlinks for utilities corresponding to 'cpio' package.
@@ -168,8 +152,6 @@ BusyBox symlinks for utilities corresponding to 'cpio' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'cron'
 Requires: %{name} = %{version}-%{release}
-Provides: cron
-Conflicts: cron
 
 %description symlinks-cron
 BusyBox symlinks for utilities corresponding to 'cron' package.
@@ -178,8 +160,6 @@ BusyBox symlinks for utilities corresponding to 'cron' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'daemontools'
 Requires: %{name} = %{version}-%{release}
-Provides: daemontools
-Conflicts: daemontools
 
 %description symlinks-daemontools
 BusyBox symlinks for utilities corresponding to 'daemontools' package.
@@ -188,8 +168,6 @@ BusyBox symlinks for utilities corresponding to 'daemontools' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'dc'
 Requires: %{name} = %{version}-%{release}
-Provides: dc
-Conflicts: dc
 
 %description symlinks-dc
 BusyBox symlinks for utilities corresponding to 'dc' package.
@@ -198,8 +176,6 @@ BusyBox symlinks for utilities corresponding to 'dc' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'dnsutils'
 Requires: %{name} = %{version}-%{release}
-Provides: dnsutils
-Conflicts: dnsutils
 
 %description symlinks-dnsutils
 BusyBox symlinks for utilities corresponding to 'dnsutils' package.
@@ -208,8 +184,6 @@ BusyBox symlinks for utilities corresponding to 'dnsutils' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'dosfstools'
 Requires: %{name} = %{version}-%{release}
-Provides: dosfstools
-Conflicts: dosfstools
 
 %description symlinks-dosfstools
 BusyBox symlinks for utilities corresponding to 'dosfstools' package.
@@ -218,8 +192,6 @@ BusyBox symlinks for utilities corresponding to 'dosfstools' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ed'
 Requires: %{name} = %{version}-%{release}
-Provides: ed
-Conflicts: ed
 
 %description symlinks-ed
 BusyBox symlinks for utilities corresponding to 'ed' package.
@@ -228,8 +200,6 @@ BusyBox symlinks for utilities corresponding to 'ed' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'eject'
 Requires: %{name} = %{version}-%{release}
-Provides: eject
-Conflicts: eject
 
 %description symlinks-eject
 BusyBox symlinks for utilities corresponding to 'eject' package.
@@ -238,8 +208,6 @@ BusyBox symlinks for utilities corresponding to 'eject' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'fbset'
 Requires: %{name} = %{version}-%{release}
-Provides: fbset
-Conflicts: fbset
 
 %description symlinks-fbset
 BusyBox symlinks for utilities corresponding to 'fbset' package.
@@ -248,8 +216,6 @@ BusyBox symlinks for utilities corresponding to 'fbset' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'fdflush'
 Requires: %{name} = %{version}-%{release}
-Provides: fdflush
-Conflicts: fdflush
 
 %description symlinks-fdflush
 BusyBox symlinks for utilities corresponding to 'fdflush' package.
@@ -258,8 +224,6 @@ BusyBox symlinks for utilities corresponding to 'fdflush' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'hdparm'
 Requires: %{name} = %{version}-%{release}
-Provides: hdparm
-Conflicts: hdparm
 
 %description symlinks-hdparm
 BusyBox symlinks for utilities corresponding to 'hdparm' package.
@@ -268,8 +232,6 @@ BusyBox symlinks for utilities corresponding to 'hdparm' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ifupdown'
 Requires: %{name} = %{version}-%{release}
-Provides: ifupdown
-Conflicts: ifupdown 
 
 %description symlinks-ifupdown
 BusyBox symlinks for utilities corresponding to 'ifupdown' package.
@@ -278,8 +240,6 @@ BusyBox symlinks for utilities corresponding to 'ifupdown' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'initscripts'
 Requires: %{name} = %{version}-%{release}
-Provides: initscripts
-Conflicts: initscripts
 
 %description symlinks-initscripts
 BusyBox symlinks for utilities corresponding to 'initscripts' package.
@@ -288,8 +248,6 @@ BusyBox symlinks for utilities corresponding to 'initscripts' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ipcalc'
 Requires: %{name} = %{version}-%{release}
-Provides: ipcalc
-Conflicts: ipcalc
 
 %description symlinks-ipcalc
 BusyBox symlinks for utilities corresponding to 'ipcalc' package.
@@ -298,8 +256,6 @@ BusyBox symlinks for utilities corresponding to 'ipcalc' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'iproute'
 Requires: %{name} = %{version}-%{release}
-Provides: iproute
-Conflicts: iproute
 
 %description symlinks-iproute
 BusyBox symlinks for utilities corresponding to 'iproute' package.
@@ -308,8 +264,6 @@ BusyBox symlinks for utilities corresponding to 'iproute' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ipsvd'
 Requires: %{name} = %{version}-%{release}
-Provides: ipsvd
-Conflicts: ipsvd
 
 %description symlinks-ipsvd
 BusyBox symlinks for utilities corresponding to 'ipsvd' package.
@@ -318,8 +272,6 @@ BusyBox symlinks for utilities corresponding to 'ipsvd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'iputils-arping'
 Requires: %{name} = %{version}-%{release}
-Provides: iputils-arping
-Conflicts: iputils-arping
 
 %description symlinks-iputils-arping
 BusyBox symlinks for utilities corresponding to 'iputils-arping' package.
@@ -328,8 +280,6 @@ BusyBox symlinks for utilities corresponding to 'iputils-arping' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'iputils-ping'
 Requires: %{name} = %{version}-%{release}
-Provides: iputils-ping
-Conflicts: iputils-ping
 
 %description symlinks-iputils-ping
 BusyBox symlinks for utilities corresponding to 'iputils-ping' package.
@@ -338,8 +288,6 @@ BusyBox symlinks for utilities corresponding to 'iputils-ping' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'klogd'
 Requires: %{name} = %{version}-%{release}
-Provides: klogd
-Conflicts: klogd
 
 %description symlinks-klogd
 BusyBox symlinks for utilities corresponding to 'klogd' package.
@@ -348,8 +296,6 @@ BusyBox symlinks for utilities corresponding to 'klogd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'loadlin'
 Requires: %{name} = %{version}-%{release}
-Provides: loadlin
-Conflicts: loadlin
 
 %description symlinks-loadlin
 BusyBox symlinks for utilities corresponding to 'loadlin' package.
@@ -358,8 +304,6 @@ BusyBox symlinks for utilities corresponding to 'loadlin' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'lrzsz'
 Requires: %{name} = %{version}-%{release}
-Provides: lrzsz
-Conflicts: lrzsz
 
 %description symlinks-lrzsz
 BusyBox symlinks for utilities corresponding to 'lrzsz' package.
@@ -368,8 +312,6 @@ BusyBox symlinks for utilities corresponding to 'lrzsz' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'lzma'
 Requires: %{name} = %{version}-%{release}
-Provides: lzma
-Conflicts: lzma
 
 %description symlinks-lzma
 BusyBox symlinks for utilities corresponding to 'lzma' package.
@@ -378,8 +320,6 @@ BusyBox symlinks for utilities corresponding to 'lzma' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'lzop'
 Requires: %{name} = %{version}-%{release}
-Provides: lzop
-Conflicts: lzop
 
 %description symlinks-lzop
 BusyBox symlinks for utilities corresponding to 'lzop' package.
@@ -388,8 +328,6 @@ BusyBox symlinks for utilities corresponding to 'lzop' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'module-init-tools'
 Requires: %{name} = %{version}-%{release}
-Provides: module-init-tools
-Conflicts: module-init-tools
 
 %description symlinks-module-init-tools
 BusyBox symlinks for utilities corresponding to 'module-init-tools' package.
@@ -398,8 +336,6 @@ BusyBox symlinks for utilities corresponding to 'module-init-tools' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'mtd-utils'
 Requires: %{name} = %{version}-%{release}
-Provides: mtd-utils
-Conflicts: mtd-utils
 
 %description symlinks-mtd-utils
 BusyBox symlinks for utilities corresponding to 'mtd-utils' package.
@@ -408,8 +344,6 @@ BusyBox symlinks for utilities corresponding to 'mtd-utils' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'net-tools'
 Requires: %{name} = %{version}-%{release}
-Provides: net-tools
-Conflicts: net-tools
 
 %description symlinks-net-tools
 BusyBox symlinks for utilities corresponding to 'net-tools' package.
@@ -418,8 +352,6 @@ BusyBox symlinks for utilities corresponding to 'net-tools' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'openbsd-inetd'
 Requires: %{name} = %{version}-%{release}
-Provides: openbsd-inetd
-Conflicts: openbsd-inetd
 
 %description symlinks-openbsd-inetd
 BusyBox symlinks for utilities corresponding to 'openbsd-inetd' package.
@@ -428,8 +360,6 @@ BusyBox symlinks for utilities corresponding to 'openbsd-inetd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'passwd'
 Requires: %{name} = %{version}-%{release}
-Provides: passwd
-Conflicts: passwd
 
 %description symlinks-passwd
 BusyBox symlinks for utilities corresponding to 'passwd' package.
@@ -438,8 +368,6 @@ BusyBox symlinks for utilities corresponding to 'passwd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'patch'
 Requires: %{name} = %{version}-%{release}
-Provides: patch
-Conflicts: patch
 
 %description symlinks-patch
 BusyBox symlinks for utilities corresponding to 'patch' package.
@@ -448,8 +376,6 @@ BusyBox symlinks for utilities corresponding to 'patch' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ppp'
 Requires: %{name} = %{version}-%{release}
-Provides: ppp
-Conflicts: ppp
 
 %description symlinks-ppp
 BusyBox symlinks for utilities corresponding to 'ppp' package.
@@ -458,8 +384,6 @@ BusyBox symlinks for utilities corresponding to 'ppp' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'procps'
 Requires: %{name} = %{version}-%{release}
-Provides: procps
-Conflicts: procps
 
 %description symlinks-procps
 BusyBox symlinks for utilities corresponding to 'procps' package.
@@ -468,8 +392,6 @@ BusyBox symlinks for utilities corresponding to 'procps' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'psmisc'
 Requires: %{name} = %{version}-%{release}
-Provides: psmisc
-Conflicts: psmisc
 
 %description symlinks-psmisc
 BusyBox symlinks for utilities corresponding to 'psmisc' package.
@@ -478,8 +400,6 @@ BusyBox symlinks for utilities corresponding to 'psmisc' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'rdate'
 Requires: %{name} = %{version}-%{release}
-Provides: rdate
-Conflicts: rdate
 
 %description symlinks-rdate
 BusyBox symlinks for utilities corresponding to 'rdate' package.
@@ -488,8 +408,6 @@ BusyBox symlinks for utilities corresponding to 'rdate' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'realpath'
 Requires: %{name} = %{version}-%{release}
-Provides: realpath
-Conflicts: realpath
 
 %description symlinks-realpath
 BusyBox symlinks for utilities corresponding to 'realpath' package.
@@ -498,8 +416,6 @@ BusyBox symlinks for utilities corresponding to 'realpath' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'runit'
 Requires: %{name} = %{version}-%{release}
-Provides: runit
-Conflicts: runit
 
 %description symlinks-runit
 BusyBox symlinks for utilities corresponding to 'runit' package.
@@ -508,8 +424,6 @@ BusyBox symlinks for utilities corresponding to 'runit' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'sharutils'
 Requires: %{name} = %{version}-%{release}
-Provides: sharutils
-Conflicts: sharutils
 
 %description symlinks-sharutils
 BusyBox symlinks for utilities corresponding to 'sharutils' package.
@@ -518,8 +432,6 @@ BusyBox symlinks for utilities corresponding to 'sharutils' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'ssmtp'
 Requires: %{name} = %{version}-%{release}
-Provides: ssmtp
-Conflicts: ssmtp
 
 %description symlinks-ssmtp
 BusyBox symlinks for utilities corresponding to 'ssmtp' package.
@@ -528,8 +440,6 @@ BusyBox symlinks for utilities corresponding to 'ssmtp' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'sysklogd'
 Requires: %{name} = %{version}-%{release}
-Provides: sysklogd
-Conflicts: sysklogd
 
 %description symlinks-sysklogd
 BusyBox symlinks for utilities corresponding to 'sysklogd' package.
@@ -538,8 +448,6 @@ BusyBox symlinks for utilities corresponding to 'sysklogd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'telnetd'
 Requires: %{name} = %{version}-%{release}
-Provides: telnetd
-Conflicts: telnetd
 
 %description symlinks-telnetd
 BusyBox symlinks for utilities corresponding to 'telnetd' package.
@@ -548,8 +456,6 @@ BusyBox symlinks for utilities corresponding to 'telnetd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'tftp'
 Requires: %{name} = %{version}-%{release}
-Provides: tftp
-Conflicts: tftp
 
 %description symlinks-tftp
 BusyBox symlinks for utilities corresponding to 'tftp' package.
@@ -558,8 +464,6 @@ BusyBox symlinks for utilities corresponding to 'tftp' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'time'
 Requires: %{name} = %{version}-%{release}
-Provides: time
-Conflicts: time
 
 %description symlinks-time
 BusyBox symlinks for utilities corresponding to 'time' package.
@@ -568,8 +472,6 @@ BusyBox symlinks for utilities corresponding to 'time' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'tofrodos'
 Requires: %{name} = %{version}-%{release}
-Provides: tofrodos
-Conflicts: tofrodos
 
 %description symlinks-tofrodos
 BusyBox symlinks for utilities corresponding to 'tofrodos' package.
@@ -578,8 +480,6 @@ BusyBox symlinks for utilities corresponding to 'tofrodos' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'udhcpc'
 Requires: %{name} = %{version}-%{release}
-Provides: udhcpc
-Conflicts: udhcpc
 
 %description symlinks-udhcpc
 BusyBox symlinks for utilities corresponding to 'udhcpc' package.
@@ -588,8 +488,6 @@ BusyBox symlinks for utilities corresponding to 'udhcpc' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'udhcpd'
 Requires: %{name} = %{version}-%{release}
-Provides: udhcpd
-Conflicts: udhcpd
 
 %description symlinks-udhcpd
 BusyBox symlinks for utilities corresponding to 'udhcpd' package.
@@ -598,8 +496,6 @@ BusyBox symlinks for utilities corresponding to 'udhcpd' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'unzip'
 Requires: %{name} = %{version}-%{release}
-Provides: unzip
-Conflicts: unzip
 
 %description symlinks-unzip
 BusyBox symlinks for utilities corresponding to 'unzip' package.
@@ -608,8 +504,6 @@ BusyBox symlinks for utilities corresponding to 'unzip' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'vlan'
 Requires: %{name} = %{version}-%{release}
-Provides: vlan
-Conflicts: vlan
 
 %description symlinks-vlan
 BusyBox symlinks for utilities corresponding to 'vlan' package.
@@ -618,8 +512,6 @@ BusyBox symlinks for utilities corresponding to 'vlan' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'vlock'
 Requires: %{name} = %{version}-%{release}
-Provides: vlock
-Conflicts: vlock
 
 %description symlinks-vlock
 BusyBox symlinks for utilities corresponding to 'vlock' package.
@@ -628,8 +520,6 @@ BusyBox symlinks for utilities corresponding to 'vlock' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'watchdog'
 Requires: %{name} = %{version}-%{release}
-Provides: watchdog
-Conflicts: watchdog
 
 %description symlinks-watchdog
 BusyBox symlinks for utilities corresponding to 'watchdog' package.
@@ -638,8 +528,6 @@ BusyBox symlinks for utilities corresponding to 'watchdog' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'wget'
 Requires: %{name} = %{version}-%{release}
-Provides: wget
-Conflicts: wget
 
 %description symlinks-wget
 BusyBox symlinks for utilities corresponding to 'wget' package.
@@ -648,8 +536,6 @@ BusyBox symlinks for utilities corresponding to 'wget' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'xterm'
 Requires: %{name} = %{version}-%{release}
-Provides: xterm
-Conflicts: xterm
 
 %description symlinks-xterm
 BusyBox symlinks for utilities corresponding to 'xterm' package.
@@ -658,8 +544,6 @@ BusyBox symlinks for utilities corresponding to 'xterm' package.
 Group: tools
 Summary: BusyBox symlinks to provide 'zcip'
 Requires: %{name} = %{version}-%{release}
-Provides: zcip
-Conflicts: zcip
 
 %description symlinks-zcip
 BusyBox symlinks for utilities corresponding to 'zcip' package.
@@ -741,7 +625,7 @@ popd
 /bin/date
 /bin/dd
 /bin/df
-%exclude /bin/dmesg
+/bin/dmesg
 /bin/dnsdomainname
 /bin/echo
 /bin/egrep
@@ -756,7 +640,7 @@ popd
 /bin/mkdir
 /bin/mknod
 /bin/more
-%exclude /bin/mount
+/bin/mount
 /bin/mv
 /bin/pwd
 /bin/readlink
@@ -770,7 +654,7 @@ popd
 /bin/tar
 /bin/touch
 /bin/true
-%exclude /bin/umount
+/bin/umount
 /bin/uname
 /bin/uncompress
 /bin/zcat
