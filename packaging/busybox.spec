@@ -11,6 +11,7 @@ Source2: bin.links
 Source3: sbin.links
 Source4: usrbin.links
 Source5: usrsbin.links
+Source1001: packaging/busybox.manifest 
 
 Patch0: 06ls.patch
 Patch1: doc-man-name.patch
@@ -588,6 +589,7 @@ BusyBox symlinks for utilities corresponding to 'zcip' package.
 
 
 %build
+cp %{SOURCE1001} .
 # create dynamic busybox - the executable is busybox
 make defconfig
 make CC="gcc $RPM_OPT_FLAGS"
@@ -612,6 +614,7 @@ for f in `cat %SOURCE5` ; do ln -s ../../bin/busybox $f ; done
 popd
 
 %files
+%manifest busybox.manifest
 %defattr(-,root,root,-)
 %doc LICENSE 
 /bin/mktemp
@@ -745,30 +748,37 @@ popd
 %exclude /usr/sbin/readprofile
 
 %files docs
+%manifest busybox.manifest
 %doc LICENSE docs/busybox.net/*.html
 
 %files symlinks-adduser
+%manifest busybox.manifest
 /usr/sbin/addgroup
 /usr/sbin/adduser
 /usr/sbin/delgroup
 /usr/sbin/deluser
 
 %files symlinks-adjtimex
+%manifest busybox.manifest
 /usr/bin/adjtimex
 
 %files symlinks-binutils
+%manifest busybox.manifest
 /usr/bin/ar
 /usr/bin/strings
 
 %files symlinks-bridge-utils
+%manifest busybox.manifest
 /usr/bin/brctl
 
 %files symlinks-bsdmainutils
+%manifest busybox.manifest
 /usr/bin/cal
 /usr/bin/hd
 /usr/bin/hexdump
 
 %files symlinks-busybox
+%manifest busybox.manifest
 /usr/bin/[[
 /usr/bin/catv
 /usr/sbin/crond
@@ -806,11 +816,13 @@ popd
 /usr/bin/volname
 
 %files symlinks-bzip2
+%manifest busybox.manifest
 /bin/bunzip2
 /bin/bzcat
 /bin/bzip2
 
 %files symlinks-console-tools
+%manifest busybox.manifest
 /usr/bin/chvt
 /usr/bin/deallocvt
 /bin/fgconsole
@@ -821,87 +833,111 @@ popd
 /usr/bin/showkey
 
 %files symlinks-cpio
+%manifest busybox.manifest
 /bin/cpio
 
 %files symlinks-cron
+%manifest busybox.manifest
 /usr/bin/crontab
 
 %files symlinks-daemontools
+%manifest busybox.manifest
 /usr/bin/envdir
 /usr/bin/envuidgid
 /usr/bin/setuidgid
 /usr/bin/softlimit
 
 %files symlinks-dc
+%manifest busybox.manifest
 /usr/bin/dc
 
 %files symlinks-dnsutils
+%manifest busybox.manifest
 /usr/bin/nslookup
 
 %files symlinks-dosfstools
+%manifest busybox.manifest
 /sbin/mkdosfs
 /sbin/mkfs.vfat
 
 %files symlinks-ed
+%manifest busybox.manifest
 /bin/ed
 
 %files symlinks-eject
+%manifest busybox.manifest
 /usr/bin/eject
 
 %files symlinks-fbset
+%manifest busybox.manifest
 /bin/fbset
 
 %files symlinks-fdflush
+%manifest busybox.manifest
 /bin/fdflush
 
 %files symlinks-hdparm
+%manifest busybox.manifest
 /sbin/hdparm
 
 %files symlinks-ifupdown
+%manifest busybox.manifest
 /sbin/ifdown
 /sbin/ifup
 
 %files symlinks-initscripts
+%manifest busybox.manifest
 /bin/mountpoint
 
 %files symlinks-ipcalc
+%manifest busybox.manifest
 /usr/bin/ipcalc
 
 %files symlinks-iproute
+%manifest busybox.manifest
 /bin/ip
 /sbin/ip
 
 %files symlinks-ipsvd
+%manifest busybox.manifest
 /usr/bin/tcpsvd
 /usr/bin/udpsvd
 
 %files symlinks-iputils-arping
+%manifest busybox.manifest
 /usr/bin/arping
 
 %files symlinks-iputils-ping
+%manifest busybox.manifest
 /bin/ping
 /bin/ping6
 
 %files symlinks-klogd
+%manifest busybox.manifest
 /sbin/klogd
 
 %files symlinks-loadlin
+%manifest busybox.manifest
 /usr/bin/freeramdisk
 
 %files symlinks-lrzsz
+%manifest busybox.manifest
 /usr/bin/rx
 
 %files symlinks-lzma
+%manifest busybox.manifest
 /usr/bin/lzcat
 /usr/bin/lzma
 /usr/bin/unlzma
 
 %files symlinks-lzop
+%manifest busybox.manifest
 /usr/bin/lzop
 /usr/bin/lzopcat
 /usr/bin/unlzop
 
 %files symlinks-module-init-tools
+%manifest busybox.manifest
 /sbin/depmod
 /sbin/insmod
 /sbin/lsmod
@@ -910,6 +946,7 @@ popd
 /sbin/rmmod
 
 %files symlinks-mtd-utils
+%manifest busybox.manifest
 /usr/sbin/flash_eraseall
 /usr/sbin/flash_lock
 /usr/sbin/flash_unlock
@@ -918,6 +955,7 @@ popd
 /usr/sbin/ubidetach
 
 %files symlinks-net-tools
+%manifest busybox.manifest
 /usr/sbin/arp
 /sbin/ifconfig
 /sbin/iptunnel
@@ -927,19 +965,24 @@ popd
 /sbin/slattach
 
 %files symlinks-openbsd-inetd
+%manifest busybox.manifest
 /usr/sbin/inetd
 
 %files symlinks-passwd
+%manifest busybox.manifest
 /usr/sbin/chpasswd
 /usr/bin/passwd
 
 %files symlinks-patch
+%manifest busybox.manifest
 /usr/bin/patch
 
 %files symlinks-ppp
+%manifest busybox.manifest
 /usr/sbin/chat
 
 %files symlinks-procps
+%manifest busybox.manifest
 /usr/bin/free
 /bin/kill
 /usr/bin/pgrep
@@ -951,13 +994,16 @@ popd
 /usr/bin/watch
 
 %files symlinks-psmisc
+%manifest busybox.manifest
 /bin/fuser
 /usr/bin/killall
 
 %files symlinks-rdate
+%manifest busybox.manifest
 /usr/sbin/rdate
 
 %files symlinks-realpath
+%manifest busybox.manifest
 /usr/bin/realpath
 
 #%files symlinks-rpm
@@ -965,6 +1011,7 @@ popd
 #/usr/bin/rpm2cpio
 
 %files symlinks-runit
+%manifest busybox.manifest
 /usr/bin/chpst
 /usr/bin/runsv
 /usr/bin/runsvdir
@@ -972,53 +1019,69 @@ popd
 /usr/bin/svlogd
 
 %files symlinks-sharutils
+%manifest busybox.manifest
 /usr/bin/uudecode
 /usr/bin/uuencode
 
 %files symlinks-ssmtp
+%manifest busybox.manifest
 /usr/sbin/sendmail
 
 %files symlinks-sysklogd
+%manifest busybox.manifest
 /sbin/syslogd
 
 %files symlinks-telnetd
+%manifest busybox.manifest
 /usr/sbin/telnetd
 
 %files symlinks-tftp
+%manifest busybox.manifest
 /usr/bin/tftp
 
 %files symlinks-time
+%manifest busybox.manifest
 /usr/bin/time
 
 %files symlinks-tofrodos
+%manifest busybox.manifest
 /usr/bin/dos2unix
 /usr/bin/unix2dos
 
 %files symlinks-udhcpc
+%manifest busybox.manifest
 /usr/bin/udhcpc
 
 %files symlinks-udhcpd
+%manifest busybox.manifest
 /usr/bin/dumpleases
 /usr/sbin/udhcpd
 
 %files symlinks-unzip
+%manifest busybox.manifest
 /usr/bin/unzip
 
 %files symlinks-vlan
+%manifest busybox.manifest
 /sbin/vconfig
 
 %files symlinks-vlock
+%manifest busybox.manifest
 /usr/bin/vlock
 
 %files symlinks-watchdog
+%manifest busybox.manifest
 /usr/sbin/watchdog
 
 %files symlinks-wget
+%manifest busybox.manifest
 /usr/bin/wget
 
 %files symlinks-xterm
+%manifest busybox.manifest
 /usr/bin/resize
 
 %files symlinks-zcip
+%manifest busybox.manifest
 /usr/bin/zcip
 
