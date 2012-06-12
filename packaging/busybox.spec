@@ -1,10 +1,9 @@
-#sbs-git:slp/pkgs/b/busybox busybox 1.17.1 2af797aea95edf3accab73b53dd8075b78e75ddd
 Summary: Single binary providing simplified versions of system commands
 Name: busybox
 Version: 1.17.1
 Release: 10
 License: GPLv2
-Group: System/Shells
+Group: Base/Tools
 Source: http://www.busybox.net/downloads/%{name}-%{version}.tar.gz
 Source1: busybox-dahlia.config
 Source2: bin.links
@@ -19,8 +18,6 @@ Patch2: shell-ash-export-HOME.patch
 Patch3: applets-fallback.patch
 Patch4: version.patch
 Patch5: init-console.patch
-#Patch6: 05thumb.dpatch
-#Patch7: 06ls.patch
 Patch8: busybox-zero-ifr.ifr_hwaddr.sa_data.patch
 Patch9: top-display-rss.patch
 Patch10: strip.patch
@@ -558,8 +555,6 @@ BusyBox symlinks for utilities corresponding to 'zcip' package.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
-#%patch6 -p1
-#%patch7 -p1
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
@@ -650,7 +645,6 @@ popd
 /bin/rm
 /bin/rmdir
 /bin/sed
-#/bin/sh
 /bin/sleep
 /bin/stty
 /bin/sync
