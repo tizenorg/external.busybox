@@ -644,7 +644,7 @@ popd
 /bin/readlink
 /bin/rm
 /bin/rmdir
-/bin/sed
+%exclude /bin/sed
 /bin/sleep
 /bin/stty
 /bin/sync
