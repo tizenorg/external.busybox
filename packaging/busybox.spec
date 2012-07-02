@@ -522,6 +522,14 @@ Requires: %{name} = %{version}-%{release}
 %description symlinks-watchdog
 BusyBox symlinks for utilities corresponding to 'watchdog' package.
 
+%package symlinks-loginutils
+Group: tools
+Summary: BusyBox symlinks to provide 'su'
+Requires: %{name} = %{version}-%{release}
+
+%description symlinks-loginutils
+BusyBox symlinks for utilities corresponding to 'su' package.
+
 %package symlinks-wget
 Group: tools
 Summary: BusyBox symlinks to provide 'wget'
@@ -1078,4 +1086,9 @@ popd
 %files symlinks-zcip
 %manifest busybox.manifest
 /usr/bin/zcip
+
+%files symlinks-loginutils
+%manifest busybox.manifest
+/bin/su
+/bin/sulogin
 

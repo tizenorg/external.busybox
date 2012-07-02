@@ -63,3 +63,5 @@ uname
 uncompress
 usleep
 zcat
+su
+sulogin

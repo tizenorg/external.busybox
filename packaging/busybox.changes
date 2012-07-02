@@ -1,2 +1,23 @@
-* Tue Jun 19 2012 Prajwal Mohan <prajwal.karur.mohan@intel.com>
+* Mon Jul 02 2012 Anas Nashif <anas.nashif@intel.com> 20120619.1@a046c13
+- Add su to a new sub-package
+
+* Tue Jun 19 2012 Prajwal Mohan <prajwal.karur.mohan@intel.com> 20120619.1@b4a58b5
 - excluding sed from file list
+
+* Tue Jun 12 2012 Ryan Ware <ryan.r.ware@intel.com> 20120619.1@1f2d5be
+- Cleaned up spec file including change of group and removal of extraneous setup args.
+
+* Wed May 30 2012 Ryan Ware <ryan.r.ware@intel.com> 20120619.1@a5c01b1
+- Add default Smack manifest for busybox.spec
+
+* Sun Apr 29 2012 Kim Kibum <kb0929.kim@samsung.com> 20120619.1@11104c6
+- upload tizen1.0 source
+
+* Tue Feb 21 2012 Jinhyuk Lee <jjim.lee@samsung.com> 20120619.1@89ba915
+- Version up to prevent fullbuild error
+
+* Fri Jan 06 2012 Kibum Kim <kb0929.kim@samsung.com> 20120619.1@a0d3541
+- Git init
+[ Eunkyoung Kim ]
+- Initial empty repository
+
