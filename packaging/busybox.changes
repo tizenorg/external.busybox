@@ -1,3 +1,6 @@
+* Sat Jul 07 2012 Prajwal Mohan <prajwal.karur.mohan@intel.com>
+- Removing dmesg, mount and umount - its provided by util-linux
+
 * Mon Jul 02 2012 Anas Nashif <anas.nashif@intel.com> 20120619.1@a046c13
 - Add su to a new sub-package
 

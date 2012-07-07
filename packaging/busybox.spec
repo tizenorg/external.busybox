@@ -631,7 +631,6 @@ popd
 /bin/date
 /bin/dd
 /bin/df
-/bin/dmesg
 /bin/dnsdomainname
 /bin/echo
 /bin/egrep
@@ -646,7 +645,6 @@ popd
 /bin/mkdir
 /bin/mknod
 /bin/more
-/bin/mount
 /bin/mv
 /bin/pwd
 /bin/readlink
@@ -659,7 +657,6 @@ popd
 /bin/tar
 /bin/touch
 /bin/true
-/bin/umount
 /bin/uname
 /bin/uncompress
 /bin/zcat
