@@ -1,16 +1,34 @@
+busybox (3:1.17.1-10slp2+s8) unstable; urgency=low
+
+  * Fix displaying of unicode characters.
+  * Git: slp/pkgs/b/busybox
+  * Tag: busybox_3%1.17.1-10slp2+s8
+
+ -- Rafal Krypa <r.krypa@samsung.com>  Mon, 16 Apr 2012 13:10:58 +0200
+
+busybox (3:1.17.1-10slp2+s7) unstable; urgency=low
+
+  * slp: Disable chat(1)
+  * Git: slp/pkgs/b/busybox
+  * Tag: busybox_3%1.17.1-10slp2+s7
+
+ -- Karol Lewandowski <k.lewandowsk@samsung.com>  Tue, 17 Jan 2012 11:41:58 +0100
+
 busybox (3:1.17.1-10slp2+s6-1) unstable; urgency=low
 
-  * Version up to prevent fullbuild error
-  * Git : tizen1/pkgs/b/busybox
-  * Tag : busybox_3:1.17.1-10slp2+s6-1
+  * Add tag required by build server
+  * Git: slp/pkgs/b/busybox
+  * Tag: busybox_3%1.17.1-10slp2+s6-1
 
- -- Jinhyuk Lee <jjim.lee@samsung.com>  Wed, 22 Feb 2012 08:45:04 +0900
+ -- Karol Lewandowski <k.lewandowsk@samsung.com>  Thu, 12 Jan 2012 12:45:55 +0100
 
 busybox (3:1.17.1-10slp2+s6) unstable; urgency=low
 
-  * Remove build dependency on systemd 
+  * slp: Import SMACK patch
+  * slp: Don't allow SELINUX and SMACK to be enabled at the same time
+  * slp: Fix obvious mistake in smack patch
 
- -- DongGi Jang <dg0402.jang@samsung.com>  Thu, 22 Dec 2011 12:51:04 +0900
+ -- Karol Lewandowski <k.lewandowsk@samsung.com>  Wed, 11 Jan 2012 12:31:43 +0100
 
 busybox (3:1.17.1-10slp2+s5) unstable; urgency=low
 

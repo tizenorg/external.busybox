@@ -1,6 +1,0 @@
-bin/busybox sbin/depmod
-bin/busybox sbin/insmod
-bin/busybox sbin/lsmod
-bin/busybox sbin/modinfo
-bin/busybox sbin/modprobe
-bin/busybox sbin/rmmod

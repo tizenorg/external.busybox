@@ -1,5 +1,0 @@
-bin/busybox usr/bin/chpst
-bin/busybox usr/bin/runsv
-bin/busybox usr/bin/runsvdir
-bin/busybox usr/bin/sv
-bin/busybox usr/bin/svlogd

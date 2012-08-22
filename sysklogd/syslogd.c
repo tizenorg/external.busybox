@@ -34,6 +34,7 @@
 #include <sys/shm.h>
 #endif
 
+#include "sd-daemon.h"
 
 #define DEBUG 0
 
@@ -511,6 +512,9 @@ static NOINLINE int create_socket(void)
 	struct sockaddr_un sunx;
 	int sock_fd;
 	char *dev_log_name;
+
+	if (sd_listen_fds(1) == 1 && sd_is_socket_unix(SD_LISTEN_FDS_START, SOCK_DGRAM, -1, "/dev/log", 0) > 0)
+		return SD_LISTEN_FDS_START;
 
 	memset(&sunx, 0, sizeof(sunx));
 	sunx.sun_family = AF_UNIX;

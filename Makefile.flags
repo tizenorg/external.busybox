@@ -115,6 +115,10 @@ ifeq ($(CONFIG_DMALLOC),y)
 LDLIBS += dmalloc
 endif
 
+ifeq ($(CONFIG_SYSLOGD),y)
+LDLIBS += systemd-daemon
+endif
+
 # If a flat binary should be built, CFLAGS_busybox="-elf2flt"
 # env var should be set for make invocation.
 # Here we check whether CFLAGS_busybox indeed contains that flag.

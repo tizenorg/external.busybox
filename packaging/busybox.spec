@@ -54,13 +54,16 @@ Patch32: debian-changes-1:1.17.1-10
 
 # SLP
 Patch33: udhcpc-fast-request.patch
+Patch34: smack-busybox-1.17.1.patch
+Patch35: smack-conflict-with-selinux.patch
+Patch36: make_unicode_printable.patch
+
+Patch100: busybox-1.17.1-make.patch
 
 URL: http://www.busybox.net
 
+BuildRequires: pkgconfig(libsystemd-daemon)
 
-
-
-%define debug_package %{nil}  
 
 %description 
 Busybox is a single binary which includes versions of a large number
@@ -585,7 +588,9 @@ BusyBox symlinks for utilities corresponding to 'zcip' package.
 %patch31 -p1
 %patch32 -p1
 %patch33 -p1
+%patch36 -p1
 
+%patch100 -p1
 
 %build
 # create dynamic busybox - the executable is busybox
@@ -614,85 +619,85 @@ popd
 %files
 %defattr(-,root,root,-)
 %doc LICENSE 
-/bin/mktemp
+%exclude /bin/mktemp
 /bin/busybox
-/bin/ash
-/bin/cat
-/bin/chgrp
-/bin/chmod
-/bin/chown
-/bin/cp
-/bin/date
-/bin/dd
-/bin/df
+%exclude /bin/ash
+%exclude /bin/cat
+%exclude /bin/chgrp
+%exclude /bin/chmod
+%exclude /bin/chown
+%exclude /bin/cp
+%exclude /bin/date
+%exclude /bin/dd
+%exclude /bin/df
 /bin/dmesg
-/bin/dnsdomainname
-/bin/echo
+%exclude /bin/dnsdomainname
+%exclude /bin/echo
 /bin/egrep
-/bin/false
-/bin/fgrep
+%exclude /bin/false
+%exclude /bin/fgrep
 /bin/grep
 /bin/gunzip
 /bin/gzip
 /bin/hostname
-/bin/ln
-/bin/ls
-/bin/mkdir
-/bin/mknod
+%exclude /bin/ln
+%exclude /bin/ls
+%exclude /bin/mkdir
+%exclude /bin/mknod
 /bin/more
 /bin/mount
-/bin/mv
-/bin/pwd
-/bin/readlink
-/bin/rm
-/bin/rmdir
+%exclude /bin/mv
+%exclude /bin/pwd
+%exclude /bin/readlink
+%exclude /bin/rm
+%exclude /bin/rmdir
 /bin/sed
 #/bin/sh
-/bin/sleep
-/bin/stty
-/bin/sync
+%exclude /bin/sleep
+%exclude /bin/stty
+%exclude /bin/sync
 /bin/tar
-/bin/touch
-/bin/true
+%exclude /bin/touch
+%exclude /bin/true
 /bin/umount
-/bin/uname
-/bin/uncompress
-/bin/zcat
+%exclude /bin/uname
+%exclude /bin/uncompress
+%exclude /bin/zcat
 %exclude /sbin/blkid
 %exclude /sbin/blockdev
 %exclude /sbin/fdisk
-/sbin/fsck.minix
+%exclude /sbin/fsck.minix
 /sbin/getty
 %exclude /sbin/hwclock
 %exclude /sbin/losetup
-/sbin/mkfs.minix
+%exclude /sbin/mkfs.minix
 %exclude /sbin/mkswap
 %exclude /sbin/pivot_root
 %exclude /sbin/swapoff
 %exclude /sbin/swapon
 %exclude /sbin/switch_root
-/usr/bin/[
-/usr/bin/basename
+%exclude /usr/bin/[
+%exclude /usr/bin/basename
 %exclude /usr/bin/chrt
-/usr/bin/cksum
-/usr/bin/cmp
-/usr/bin/comm
-/usr/bin/cut
+%exclude /usr/bin/cksum
+%exclude /usr/bin/cmp
+%exclude /usr/bin/comm
+%exclude /usr/bin/cut
 /usr/bin/diff
-/usr/bin/dirname
-/usr/bin/du
-/usr/bin/env
-/usr/bin/expand
-/usr/bin/expr
-/usr/bin/fdformat
+%exclude /usr/bin/dirname
+%exclude /usr/bin/du
+%exclude /usr/bin/env
+%exclude /usr/bin/expand
+%exclude /usr/bin/expr
+%exclude /usr/bin/fdformat
 %exclude /usr/bin/find
 %exclude /usr/bin/flock
-/usr/bin/fold
+%exclude /usr/bin/fold
 %exclude /usr/bin/getopt
-/usr/bin/head
-/usr/bin/hostid
-/usr/bin/id
-/usr/bin/install
+%exclude /usr/bin/head
+%exclude /usr/bin/hostid
+%exclude /usr/bin/id
+%exclude /usr/bin/install
 %exclude /usr/bin/ionice
 %exclude /usr/bin/ipcrm
 %exclude /usr/bin/ipcs
@@ -700,183 +705,183 @@ popd
 %exclude /usr/bin/linux32
 %exclude /usr/bin/linux64
 %exclude /usr/bin/logger
-/usr/bin/logname
-/usr/bin/md5sum
-/usr/bin/mkfifo
-/usr/bin/nice
-/usr/bin/nohup
-/usr/bin/od
-/usr/bin/printenv
-/usr/bin/printf
+%exclude /usr/bin/logname
+%exclude /usr/bin/md5sum
+%exclude /usr/bin/mkfifo
+%exclude /usr/bin/nice
+%exclude /usr/bin/nohup
+%exclude /usr/bin/od
+%exclude /usr/bin/printenv
+%exclude /usr/bin/printf
 %exclude /usr/bin/renice
 %exclude /usr/bin/rev
-/usr/bin/rtcwake
+%exclude /usr/bin/rtcwake
 %exclude /usr/bin/script
-/usr/bin/scriptreplay
-/usr/bin/seq
+%exclude /usr/bin/scriptreplay
+%exclude /usr/bin/seq
 %exclude /usr/bin/setarch
 %exclude /usr/bin/setsid
-/usr/bin/sha1sum
-/usr/bin/sha256sum
-/usr/bin/sha512sum
-/usr/bin/sort
-/usr/bin/split
-/usr/bin/stat
-/usr/bin/sum
-/usr/bin/tac
-/usr/bin/tail
+%exclude /usr/bin/sha1sum
+%exclude /usr/bin/sha256sum
+%exclude /usr/bin/sha512sum
+%exclude /usr/bin/sort
+%exclude /usr/bin/split
+%exclude /usr/bin/stat
+%exclude /usr/bin/sum
+%exclude /usr/bin/tac
+%exclude /usr/bin/tail
 %exclude /usr/bin/taskset
-/usr/bin/tee
-/usr/bin/test
-/usr/bin/timeout
-/usr/bin/tr
-/usr/bin/tty
-/usr/bin/unexpand
-/usr/bin/uniq
-/usr/bin/wall
-/usr/bin/wc
-/usr/bin/who
-/usr/bin/whoami
+%exclude /usr/bin/tee
+%exclude /usr/bin/test
+%exclude /usr/bin/timeout
+%exclude /usr/bin/tr
+%exclude /usr/bin/tty
+%exclude /usr/bin/unexpand
+%exclude /usr/bin/uniq
+%exclude /usr/bin/wall
+%exclude /usr/bin/wc
+%exclude /usr/bin/who
+%exclude /usr/bin/whoami
 /usr/bin/vi
 %exclude /usr/bin/xargs
-/usr/bin/yes
-/usr/sbin/chroot
-/usr/sbin/rdev
+%exclude /usr/bin/yes
+%exclude /usr/sbin/chroot
+%exclude /usr/sbin/rdev
 %exclude /usr/sbin/readprofile
 
 %files docs
 %doc LICENSE docs/busybox.net/*.html
 
 %files symlinks-adduser
-/usr/sbin/addgroup
-/usr/sbin/adduser
-/usr/sbin/delgroup
-/usr/sbin/deluser
+%exclude /usr/sbin/addgroup
+%exclude /usr/sbin/adduser
+%exclude /usr/sbin/delgroup
+%exclude /usr/sbin/deluser
 
 %files symlinks-adjtimex
-/usr/bin/adjtimex
+%exclude /usr/bin/adjtimex
 
 %files symlinks-binutils
-/usr/bin/ar
-/usr/bin/strings
+%exclude /usr/bin/ar
+%exclude /usr/bin/strings
 
 %files symlinks-bridge-utils
-/usr/bin/brctl
+%exclude /usr/bin/brctl
 
 %files symlinks-bsdmainutils
 /usr/bin/cal
-/usr/bin/hd
+%exclude /usr/bin/hd
 /usr/bin/hexdump
 
 %files symlinks-busybox
-/usr/bin/[[
-/usr/bin/catv
-/usr/sbin/crond
-/usr/sbin/dhcprelay
-/usr/sbin/dnsd
-/bin/dumpkmap
-/usr/bin/ether-wake
-/usr/sbin/fakeidentd
-/sbin/fbsplash
+%exclude /usr/bin/[[
+%exclude /usr/bin/catv
+%exclude /usr/sbin/crond
+%exclude /usr/sbin/dhcprelay
+%exclude /usr/sbin/dnsd
+%exclude /bin/dumpkmap
+%exclude /usr/bin/ether-wake
+%exclude /usr/sbin/fakeidentd
+%exclude /sbin/fbsplash
 /bin/fsync
-/usr/bin/ftpget
-/usr/bin/ftpput
-/usr/sbin/httpd
-/sbin/ifenslave
+%exclude /usr/bin/ftpget
+%exclude /usr/bin/ftpput
+%exclude /usr/sbin/httpd
+%exclude /sbin/ifenslave
 /sbin/inotifyd
-/bin/ipaddr
-/bin/iplink
-/bin/iproute
-/bin/iprule
-/usr/bin/length
-/usr/bin/loadfont
-/sbin/loadkmap
-/sbin/logread
-/sbin/makedevs
-/sbin/mdev
-/usr/bin/microcom
-/usr/bin/nmeter
-/usr/bin/pscan
-/sbin/raidautorun
+%exclude /bin/ipaddr
+%exclude /bin/iplink
+%exclude /bin/iproute
+%exclude /bin/iprule
+%exclude /usr/bin/length
+%exclude /usr/bin/loadfont
+%exclude /sbin/loadkmap
+%exclude /sbin/logread
+%exclude /sbin/makedevs
+%exclude /sbin/mdev
+%exclude /usr/bin/microcom
+%exclude /usr/bin/nmeter
+%exclude /usr/bin/pscan
+%exclude /sbin/raidautorun
 /usr/bin/readahead
-/sbin/setconsole
-/usr/sbin/tftpd
-/usr/bin/ttysize
+%exclude /sbin/setconsole
+%exclude /usr/sbin/tftpd
+%exclude /usr/bin/ttysize
 /bin/usleep
 /usr/bin/volname
 
 %files symlinks-bzip2
-/bin/bunzip2
-/bin/bzcat
-/bin/bzip2
+%exclude /bin/bunzip2
+%exclude /bin/bzcat
+%exclude /bin/bzip2
 
 %files symlinks-console-tools
 /usr/bin/chvt
-/usr/bin/deallocvt
-/bin/fgconsole
-/usr/bin/kbd_mode
-/usr/bin/openvt
-/usr/bin/setkeycodes
-/usr/bin/setlogcons
-/usr/bin/showkey
+%exclude /usr/bin/deallocvt
+%exclude /bin/fgconsole
+%exclude /usr/bin/kbd_mode
+%exclude /usr/bin/openvt
+%exclude /usr/bin/setkeycodes
+%exclude /usr/bin/setlogcons
+%exclude /usr/bin/showkey
 
 %files symlinks-cpio
 /bin/cpio
 
 %files symlinks-cron
-/usr/bin/crontab
+%exclude /usr/bin/crontab
 
 %files symlinks-daemontools
-/usr/bin/envdir
-/usr/bin/envuidgid
-/usr/bin/setuidgid
-/usr/bin/softlimit
+%exclude /usr/bin/envdir
+%exclude /usr/bin/envuidgid
+%exclude /usr/bin/setuidgid
+%exclude /usr/bin/softlimit
 
 %files symlinks-dc
-/usr/bin/dc
+%exclude /usr/bin/dc
 
 %files symlinks-dnsutils
 /usr/bin/nslookup
 
 %files symlinks-dosfstools
-/sbin/mkdosfs
+%exclude /sbin/mkdosfs
 /sbin/mkfs.vfat
 
 %files symlinks-ed
-/bin/ed
+%exclude /bin/ed
 
 %files symlinks-eject
-/usr/bin/eject
+%exclude /usr/bin/eject
 
 %files symlinks-fbset
-/bin/fbset
+%exclude /bin/fbset
 
 %files symlinks-fdflush
-/bin/fdflush
+%exclude /bin/fdflush
 
 %files symlinks-hdparm
-/sbin/hdparm
+%exclude /sbin/hdparm
 
 %files symlinks-ifupdown
 /sbin/ifdown
 /sbin/ifup
 
 %files symlinks-initscripts
-/bin/mountpoint
+%exclude /bin/mountpoint
 
 %files symlinks-ipcalc
-/usr/bin/ipcalc
+%exclude /usr/bin/ipcalc
 
 %files symlinks-iproute
-/bin/ip
-/sbin/ip
+%exclude /bin/ip
+%exclude /sbin/ip
 
 %files symlinks-ipsvd
-/usr/bin/tcpsvd
-/usr/bin/udpsvd
+%exclude /usr/bin/tcpsvd
+%exclude /usr/bin/udpsvd
 
 %files symlinks-iputils-arping
-/usr/bin/arping
+%exclude /usr/bin/arping
 
 %files symlinks-iputils-ping
 /bin/ping
@@ -886,45 +891,45 @@ popd
 /sbin/klogd
 
 %files symlinks-loadlin
-/usr/bin/freeramdisk
+%exclude /usr/bin/freeramdisk
 
 %files symlinks-lrzsz
-/usr/bin/rx
+%exclude /usr/bin/rx
 
 %files symlinks-lzma
-/usr/bin/lzcat
-/usr/bin/lzma
-/usr/bin/unlzma
+%exclude /usr/bin/lzcat
+%exclude /usr/bin/lzma
+%exclude /usr/bin/unlzma
 
 %files symlinks-lzop
-/usr/bin/lzop
-/usr/bin/lzopcat
-/usr/bin/unlzop
+%exclude /usr/bin/lzop
+%exclude /usr/bin/lzopcat
+%exclude /usr/bin/unlzop
 
 %files symlinks-module-init-tools
-/sbin/depmod
-/sbin/insmod
-/sbin/lsmod
-/sbin/modinfo
-/sbin/modprobe
-/sbin/rmmod
+%exclude /sbin/depmod
+%exclude /sbin/insmod
+%exclude /sbin/lsmod
+%exclude /sbin/modinfo
+%exclude /sbin/modprobe
+%exclude /sbin/rmmod
 
 %files symlinks-mtd-utils
-/usr/sbin/flash_eraseall
-/usr/sbin/flash_lock
-/usr/sbin/flash_unlock
-/usr/sbin/flashcp
-/usr/sbin/ubiattach
-/usr/sbin/ubidetach
+%exclude /usr/sbin/flash_eraseall
+%exclude /usr/sbin/flash_lock
+%exclude /usr/sbin/flash_unlock
+%exclude /usr/sbin/flashcp
+%exclude /usr/sbin/ubiattach
+%exclude /usr/sbin/ubidetach
 
 %files symlinks-net-tools
 /usr/sbin/arp
 /sbin/ifconfig
-/sbin/iptunnel
-/sbin/nameif
+%exclude /sbin/iptunnel
+%exclude /sbin/nameif
 /bin/netstat
 /sbin/route
-/sbin/slattach
+%exclude /sbin/slattach
 
 %files symlinks-openbsd-inetd
 /usr/sbin/inetd
@@ -934,49 +939,49 @@ popd
 /usr/bin/passwd
 
 %files symlinks-patch
-/usr/bin/patch
+%exclude /usr/bin/patch
 
 %files symlinks-ppp
-/usr/sbin/chat
+%exclude /usr/sbin/chat
 
 %files symlinks-procps
-/usr/bin/free
-/bin/kill
-/usr/bin/pgrep
-/usr/bin/pkill
-/bin/ps
-/sbin/sysctl
-/usr/bin/top
-/usr/bin/uptime
-/usr/bin/watch
+%exclude /usr/bin/free
+%exclude /bin/kill
+%exclude /usr/bin/pgrep
+%exclude /usr/bin/pkill
+%exclude /bin/ps
+%exclude /sbin/sysctl
+%exclude /usr/bin/top
+%exclude /usr/bin/uptime
+%exclude /usr/bin/watch
 
 %files symlinks-psmisc
-/bin/fuser
-/usr/bin/killall
+%exclude /bin/fuser
+%exclude /usr/bin/killall
 
 %files symlinks-rdate
-/usr/sbin/rdate
+%exclude /usr/sbin/rdate
 
 %files symlinks-realpath
-/usr/bin/realpath
+%exclude /usr/bin/realpath
 
 #%files symlinks-rpm
 #/usr/bin/rpm
 #/usr/bin/rpm2cpio
 
 %files symlinks-runit
-/usr/bin/chpst
-/usr/bin/runsv
-/usr/bin/runsvdir
-/usr/bin/sv
-/usr/bin/svlogd
+%exclude /usr/bin/chpst
+%exclude /usr/bin/runsv
+%exclude /usr/bin/runsvdir
+%exclude /usr/bin/sv
+%exclude /usr/bin/svlogd
 
 %files symlinks-sharutils
 /usr/bin/uudecode
 /usr/bin/uuencode
 
 %files symlinks-ssmtp
-/usr/sbin/sendmail
+%exclude /usr/sbin/sendmail
 
 %files symlinks-sysklogd
 /sbin/syslogd
@@ -985,14 +990,14 @@ popd
 /usr/sbin/telnetd
 
 %files symlinks-tftp
-/usr/bin/tftp
+%exclude /usr/bin/tftp
 
 %files symlinks-time
-/usr/bin/time
+%exclude /usr/bin/time
 
 %files symlinks-tofrodos
 /usr/bin/dos2unix
-/usr/bin/unix2dos
+%exclude /usr/bin/unix2dos
 
 %files symlinks-udhcpc
 /usr/bin/udhcpc
@@ -1008,17 +1013,17 @@ popd
 /sbin/vconfig
 
 %files symlinks-vlock
-/usr/bin/vlock
+%exclude /usr/bin/vlock
 
 %files symlinks-watchdog
-/usr/sbin/watchdog
+%exclude /usr/sbin/watchdog
 
 %files symlinks-wget
-/usr/bin/wget
+%exclude /usr/bin/wget
 
 %files symlinks-xterm
-/usr/bin/resize
+%exclude /usr/bin/resize
 
 %files symlinks-zcip
-/usr/bin/zcip
+%exclude /usr/bin/zcip
 

@@ -6,7 +6,7 @@ Uploaders: Karol Lewandowski <k.lewandowsk@samsung.com>
 X-Maemo-Maintainer: Yauheni Kaliuta <yauheni.kaliuta@nokia.com>
 X-Original-Maintainer: Debian Install System Team <debian-boot@lists.debian.org>
 X-Original-Uploaders: Bastian Blank <waldi@debian.org>
-Build-Depends: debhelper (>> 5), python, quilt
+Build-Depends: debhelper (>> 5), python, quilt, libsystemd-daemon-dev
 Standards-Version: 3.7.3
 
 Package: busybox
@@ -583,3 +583,15 @@ Replaces: zcip
 Conflicts: zcip
 Description: BusyBox symlinks to provide 'zcip'
  BusyBox symlinks for utilities corresponding to 'zcip' package.
+
+Package: busybox-systemd-klogd
+Architecture: all
+Depends: busybox-symlinks-klogd (= ${binary:Version})
+Description: systemd unit file for BusyBox's klogd
+ This package provides systemd unit file for BusyBox's klogd
+
+Package: busybox-systemd-sysklogd
+Architecture: all
+Depends: busybox-symlinks-sysklogd (= ${binary:Version})
+Description: systemd unit file for BusyBox's syslogd
+ This package provides systemd unit file for BusyBox's syslogd

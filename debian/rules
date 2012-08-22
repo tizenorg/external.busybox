@@ -73,7 +73,7 @@ clean:
 	dh_clean
 
 #binary-indep: binary-indep_busybox-syslogd binary-indep_udhcpc binary-indep_udhcpd
-binary-indep:
+binary-indep: binary-indep_systemd
 
 #binary-arch: binary-arch_busybox binary-arch_busybox-static binary-arch_busybox-udeb
 binary-arch: binary-arch_slp
@@ -125,6 +125,7 @@ binary-arch_busybox-udeb: $(STAMPS_DIR)/build_udeb
 	dh_install -X.svn --sourcedir=$(DIR)
 	@$(MAKE) -f debian/rules binary-arch_all
 
+binary-arch_all: export DH_OPTIONS = -Nbusybox-systemd-klogd -Nbusybox-systemd-sysklogd
 binary-arch_all:
 	dh_installdirs
 	# add docs & debug only for busybox package itself
@@ -168,6 +169,15 @@ binary-indep_udhcpd:
 	dh_clean -k
 	dh_link
 	dh_installinit --onlyscripts
+	dh_install -X.svn
+	$(MAKE) -f debian/rules binary-indep_all
+
+binary-indep_systemd: export DH_OPTIONS = -pbusybox-systemd-klogd -pbusybox-systemd-sysklogd
+binary-indep_systemd:
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_link
 	dh_install -X.svn
 	$(MAKE) -f debian/rules binary-indep_all
 

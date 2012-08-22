@@ -40,3 +40,6 @@ debian-changes-1:1.17.1-10
 
 # SLP
 udhcpc-fast-request.patch
+smack-busybox-1.17.1.patch
+smack-conflict-with-selinux.patch
+make_unicode_printable.patch
