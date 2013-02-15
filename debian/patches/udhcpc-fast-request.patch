@@ -1,0 +1,129 @@
+From: Hakgoo Lee <goodguy.lee@samsung.com>
+Date: Thu, 16 Sep 2010 14:51:22 +0900
+Subject: [PATCH] Add FEATURE_UDHCPC_FAST_REQUEST to udhcp.
+
+If selected, udhcpc will send Request if leased IP and DHCP server is specified.
+So Discover/Offer routine can be skipped. It can reduce service recovery time in WiFi.
+---
+ include/usage.src.h         |    4 ++++
+ networking/udhcp/Config.src |    8 ++++++++
+ networking/udhcp/dhcpc.c    |   28 ++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+), 0 deletions(-)
+
+diff --git a/include/usage.src.h b/include/usage.src.h
+index 94a3256..e3c987c 100644
+--- a/include/usage.src.h
++++ b/include/usage.src.h
+@@ -4539,6 +4539,10 @@ INSERT
+ 	IF_FEATURE_UDHCPC_ARPING( \
+      "\n	-a,--arping		Use arping to validate offered address" \
+ 	) \
++	IF_FEATURE_UDHCPC_FAST_REQUEST( \
++     "\n	-d,--request-direct=IP	IP address to request without discover, must be used with -D" \
++     "\n	-D,--dhcp-server=IP	DHCP server IP address to get leased IP address" \
++	) \
+      "\n	-O,--request-option OPT	Request DHCP option OPT (cumulative)" \
+      "\n	-o,--no-default-options	Don't request any options (unless -O is given)" \
+      "\n	-x OPT:VAL		Include option OPT in sent packets (cumulative)" \
+diff --git a/networking/udhcp/Config.src b/networking/udhcp/Config.src
+index 331dffc..c4ec82f 100644
+--- a/networking/udhcp/Config.src
++++ b/networking/udhcp/Config.src
+@@ -130,3 +130,11 @@ config UDHCPC_SLACK_FOR_BUGGY_SERVERS
+ 	    maximum size of entire IP packet, and sends packets which are
+ 	    28 bytes too large.
+ 	  Seednet (ISP) VDSL: sends packets 2 bytes too large.
++
++config FEATURE_UDHCPC_FAST_REQUEST
++	bool "Send Fast Request without Discover/Offer (e.g. When same subnet is connected again like WiFi AP)."
++	default y
++	depends on UDHCPC
++	help
++	  If selected, udhcpc will send Request if leased IP and DHCP server is specified.
++	  So Discover/Offer routine can be skipped. It can reduce service recovery time in WiFi.
+diff --git a/networking/udhcp/dhcpc.c b/networking/udhcp/dhcpc.c
+index de1b798..e740871 100644
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -767,6 +767,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ {
+ 	uint8_t *temp, *message;
+ 	const char *str_c, *str_V, *str_h, *str_F, *str_r;
++	IF_FEATURE_UDHCPC_FAST_REQUEST(char *str_d, *str_D;)
+ 	IF_FEATURE_UDHCP_PORT(char *str_P;)
+ 	llist_t *list_O = NULL;
+ 	llist_t *list_x = NULL;
+@@ -812,6 +813,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 		"background\0"     No_argument       "b"
+ 		IF_FEATURE_UDHCPC_ARPING("arping\0"	No_argument       "a")
+ 		IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
++		IF_FEATURE_UDHCPC_FAST_REQUEST("request-direct\0" Required_argument "d")
++		IF_FEATURE_UDHCPC_FAST_REQUEST("dhcp-server\0"    Required_argument "D")
+ 		;
+ #endif
+ 	enum {
+@@ -841,9 +844,13 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 		USE_FOR_MMU(             OPTBIT_b,)
+ 		IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+ 		IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
++		IF_FEATURE_UDHCPC_FAST_REQUEST(OPTBIT_d,)
++		IF_FEATURE_UDHCPC_FAST_REQUEST(OPTBIT_D,)
+ 		USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+ 		IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
+ 		IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
++		IF_FEATURE_UDHCPC_FAST_REQUEST(OPT_d = 1 << OPTBIT_d,)
++		IF_FEATURE_UDHCPC_FAST_REQUEST(OPT_D = 1 << OPTBIT_D,)
+ 	};
+ 
+ 	/* Default options. */
+@@ -865,6 +872,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 		USE_FOR_MMU("b")
+ 		IF_FEATURE_UDHCPC_ARPING("a")
+ 		IF_FEATURE_UDHCP_PORT("P:")
++		IF_FEATURE_UDHCPC_FAST_REQUEST("d:D:")
+ 		"v"
+ 		, &str_c, &str_V, &str_h, &str_h, &str_F
+ 		, &client_config.interface, &client_config.pidfile, &str_r /* i,p */
+@@ -873,6 +881,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 		, &list_O
+ 		, &list_x
+ 		IF_FEATURE_UDHCP_PORT(, &str_P)
++		IF_FEATURE_UDHCPC_FAST_REQUEST(, &str_d, &str_D)
+ #if defined CONFIG_UDHCP_DEBUG && CONFIG_UDHCP_DEBUG >= 1
+ 		, &dhcp_verbose
+ #endif
+@@ -950,6 +959,18 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 		logmode |= LOGMODE_SYSLOG;
+ 	}
+ 
++#if ENABLE_FEATURE_UDHCPC_FAST_REQUEST
++	if (opt & OPT_d) {
++		log1("Parsing request-direct option");
++		requested_ip = inet_addr(str_d);
++		state = REQUESTING;
++	}
++	if (opt & OPT_D) {
++		log1("Parsing dhcp-server option");
++		server_addr = inet_addr(str_D);
++	}
++#endif
++
+ 	/* Make sure fd 0,1,2 are open */
+ 	bb_sanitize_stdio();
+ 	/* Equivalent of doing a fflush after every \n */
+@@ -963,7 +984,14 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+ 	/* We want random_xid to be random... */
+ 	srand(monotonic_us());
+ 
++#if ENABLE_FEATURE_UDHCPC_FAST_REQUEST
++	if (state != REQUESTING)
++		state = INIT_SELECTING;
++	log1("Initial state is %d", state);
++#else
+ 	state = INIT_SELECTING;
++#endif
++
+ 	udhcp_run_script(NULL, "deconfig");
+ 	change_listen_mode(LISTEN_RAW);
+ 	packet_num = 0;
+-- 

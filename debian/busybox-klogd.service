@@ -1,0 +1,10 @@
+[Unit]
+Description=Busybox Logging Service: klogd
+After=busybox-syslogd.service syslog.target
+
+[Service]
+Type=simple
+ExecStart=/sbin/klogd -n -c4
+
+[Install]
+WantedBy=multi-user.target

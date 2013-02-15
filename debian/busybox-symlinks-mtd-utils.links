@@ -1,0 +1,6 @@
+bin/busybox usr/sbin/flash_eraseall
+bin/busybox usr/sbin/flash_lock
+bin/busybox usr/sbin/flash_unlock
+bin/busybox usr/sbin/flashcp
+bin/busybox usr/sbin/ubiattach
+bin/busybox usr/sbin/ubidetach
