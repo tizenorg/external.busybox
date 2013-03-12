@@ -50,7 +50,6 @@ diff -u -a std bbox >bbox.diff || { echo Different!; sleep 1; }
 */
 
 #include "libbb.h"
-#include <getopt.h>
 
 #define assert(a) ((void)0)
 
@@ -365,7 +364,7 @@ print_long_double(size_t n_bytes, const char *block, const char *fmt_string)
 
 static void
 print_named_ascii(size_t n_bytes, const char *block,
-		const char *unused_fmt_string ATTRIBUTE_UNUSED)
+		const char *unused_fmt_string UNUSED_PARAM)
 {
 	/* Names for some non-printing characters.  */
 	static const char charname[33][3] ALIGN1 = {
@@ -405,7 +404,7 @@ print_named_ascii(size_t n_bytes, const char *block,
 
 static void
 print_ascii(size_t n_bytes, const char *block,
-		const char *unused_fmt_string ATTRIBUTE_UNUSED)
+		const char *unused_fmt_string UNUSED_PARAM)
 {
 	// buf[N] pos:  01234 56789
 	char buf[12] = "   x\0 0xx\0";
@@ -503,16 +502,16 @@ check_and_close(void)
 	}
 
 	if (ferror(stdout)) {
-		bb_error_msg("write error");
+		bb_error_msg(bb_msg_write_error);
 		ioerror = 1;
 	}
 }
 
 /* If S points to a single valid modern od format string, put
-   a description of that format in *TSPEC, make *NEXT point at the
-   character following the just-decoded format (if *NEXT is non-NULL),
-   and return zero.  For example, if S were "d4afL"
-   *NEXT would be set to "afL" and *TSPEC would be
+   a description of that format in *TSPEC, return pointer to
+   character following the just-decoded format.
+   For example, if S were "d4afL", we will return a rtp to "afL"
+   and *TSPEC would be
 	{
 		fmt = SIGNED_DECIMAL;
 		size = INT or LONG; (whichever integral_type_size[4] resolves to)
@@ -522,9 +521,8 @@ check_and_close(void)
    S_ORIG is solely for reporting errors.  It should be the full format
    string argument. */
 
-static void
-decode_one_format(const char *s_orig, const char *s, const char **next,
-					   struct tspec *tspec)
+static NOINLINE const char *
+decode_one_format(const char *s_orig, const char *s, struct tspec *tspec)
 {
 	enum size_spec size_spec;
 	unsigned size;
@@ -537,7 +535,6 @@ decode_one_format(const char *s_orig, const char *s, const char **next,
 	unsigned field_width = 0;
 	int pos;
 
-	assert(tspec != NULL);
 
 	switch (*s) {
 	case 'd':
@@ -548,7 +545,8 @@ decode_one_format(const char *s_orig, const char *s, const char **next,
 
 		c = *s++;
 		p = strchr(CSIL, *s);
-		if (!p) {
+		/* if *s == NUL, p != NULL! Testcase: "od -tx" */
+		if (!p || *p == '\0') {
 			size = sizeof(int);
 			if (isdigit(s[0])) {
 				size = bb_strtou(s, &end, 0);
@@ -563,13 +561,14 @@ decode_one_format(const char *s_orig, const char *s, const char **next,
 				s = end;
 			}
 		} else {
-			static const uint8_t CSIL_sizeof[] = {
+			static const uint8_t CSIL_sizeof[4] = {
 				sizeof(char),
 				sizeof(short),
 				sizeof(int),
 				sizeof(long),
 			};
 			size = CSIL_sizeof[p - CSIL];
+			s++; /* skip C/S/I/L */
 		}
 
 #define ISPEC_TO_FORMAT(Spec, Min_format, Long_format, Max_format) \
@@ -717,8 +716,7 @@ decode_one_format(const char *s_orig, const char *s, const char **next,
 	if (tspec->hexl_mode_trailer)
 		s++;
 
-	if (next != NULL)
-		*next = s;
+	return s;
 }
 
 /* Decode the modern od format string S.  Append the decoded
@@ -734,13 +732,13 @@ decode_format_string(const char *s)
 		struct tspec tspec;
 		const char *next;
 
-		decode_one_format(s_orig, s, &next, &tspec);
+		next = decode_one_format(s_orig, s, &tspec);
 
 		assert(s != next);
 		s = next;
+		spec = xrealloc_vector(spec, 4, n_specs);
+		memcpy(&spec[n_specs], &tspec, sizeof(spec[0]));
 		n_specs++;
-		spec = xrealloc(spec, n_specs * sizeof(*spec));
-		memcpy(&spec[n_specs-1], &tspec, sizeof *spec);
 	}
 }
 
@@ -810,14 +808,14 @@ skip(off_t n_skip)
 	}
 
 	if (n_skip)
-		bb_error_msg_and_die("cannot skip past end of combined input");
+		bb_error_msg_and_die("can't skip past end of combined input");
 }
 
 
 typedef void FN_format_address(off_t address, char c);
 
 static void
-format_address_none(off_t address ATTRIBUTE_UNUSED, char c ATTRIBUTE_UNUSED)
+format_address_none(off_t address UNUSED_PARAM, char c UNUSED_PARAM)
 {
 }
 
@@ -835,7 +833,7 @@ format_address_std(off_t address, char c)
 	printf(address_fmt, address);
 }
 
-#if ENABLE_GETOPT_LONG
+#if ENABLE_LONG_OPTS
 /* only used with --traditional */
 static void
 format_address_paren(off_t address, char c)
@@ -956,7 +954,7 @@ get_lcm(void)
 	return l_c_m;
 }
 
-#if ENABLE_GETOPT_LONG
+#if ENABLE_LONG_OPTS
 /* If S is a valid traditional offset specification with an optional
    leading '+' return nonzero and set *OFFSET to the offset it denotes.  */
 
@@ -966,7 +964,7 @@ parse_old_offset(const char *s, off_t *offset)
 	static const struct suffix_mult Bb[] = {
 		{ "B", 1024 },
 		{ "b", 512 },
-		{ }
+		{ "", 0 }
 	};
 	char *p;
 	int radix;
@@ -1181,7 +1179,7 @@ int od_main(int argc, char **argv)
 		{ "b", 512 },
 		{ "k", 1024 },
 		{ "m", 1024*1024 },
-		{ }
+		{ "", 0 }
 	};
 	enum {
 		OPT_A = 1 << 0,
@@ -1202,9 +1200,9 @@ int od_main(int argc, char **argv)
 		OPT_s = 1 << 15,
 		OPT_S = 1 << 16,
 		OPT_w = 1 << 17,
-		OPT_traditional = (1 << 18) * ENABLE_GETOPT_LONG,
+		OPT_traditional = (1 << 18) * ENABLE_LONG_OPTS,
 	};
-#if ENABLE_GETOPT_LONG
+#if ENABLE_LONG_OPTS
 	static const char od_longopts[] ALIGN1 =
 		"skip-bytes\0"        Required_argument "j"
 		"address-radix\0"     Required_argument "A"
@@ -1238,7 +1236,7 @@ int od_main(int argc, char **argv)
 
 	/* Parse command line */
 	opt_complementary = "w+:t::"; /* -w N, -t is a list */
-#if ENABLE_GETOPT_LONG
+#if ENABLE_LONG_OPTS
 	applet_long_options = od_longopts;
 #endif
 	opt = getopt32(argv, "A:N:abcdfhij:lot:vxsS:"
@@ -1284,8 +1282,7 @@ int od_main(int argc, char **argv)
 	if (opt & OPT_o) decode_format_string("o2");
 	//if (opt & OPT_t)...
 	while (lst_t) {
-		decode_format_string(lst_t->data);
-		lst_t = lst_t->link;
+		decode_format_string(llist_pop(&lst_t));
 	}
 	if (opt & OPT_v) verbose = 1;
 	if (opt & OPT_x) decode_format_string("x2");
@@ -1310,7 +1307,7 @@ int od_main(int argc, char **argv)
 	 * FIXME: POSIX 1003.1-2001 with XSI requires support for the
 	 * traditional syntax even if --traditional is not given.  */
 
-#if ENABLE_GETOPT_LONG
+#if ENABLE_LONG_OPTS
 	if (opt & OPT_traditional) {
 		off_t o1, o2;
 

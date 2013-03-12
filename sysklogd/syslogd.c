@@ -13,12 +13,14 @@
  * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
  */
 
+/*
+ * Done in syslogd_and_logger.c:
 #include "libbb.h"
 #define SYSLOG_NAMES
 #define SYSLOG_NAMES_CONST
 #include <syslog.h>
+*/
 
-#include <paths.h>
 #include <sys/un.h>
 #include <sys/uio.h>
 
@@ -32,6 +34,7 @@
 #include <sys/shm.h>
 #endif
 
+#include "sd-daemon.h"
 
 #define DEBUG 0
 
@@ -40,8 +43,11 @@
  * (semaphores are down but do_mark routine tries to down them again) */
 #undef SYSLOGD_MARK
 
+/* Write locking does not seem to be useful either */
+#undef SYSLOGD_WRLOCK
+
 enum {
-	MAX_READ = 256,
+	MAX_READ = CONFIG_FEATURE_SYSLOGD_READ_BUFFER_SIZE,
 	DNS_WAIT_SEC = 2 * 60,
 };
 
@@ -52,6 +58,15 @@ struct shbuf_ds {
 	char data[1];   /* data/messages */
 };
 
+#if ENABLE_FEATURE_REMOTE_LOG
+typedef struct {
+	int remoteFD;
+	unsigned last_dns_resolve;
+	len_and_sockaddr *remoteAddr;
+	const char *remoteHostname;
+} remoteHost_t;
+#endif
+
 /* Allows us to have smaller initializer. Ugly. */
 #define GLOBALS \
 	const char *logFilePath;                \
@@ -60,7 +75,7 @@ struct shbuf_ds {
 	/*int markInterval;*/                   \
 	/* level of messages to be logged */    \
 	int logLevel;                           \
-USE_FEATURE_ROTATE_LOGFILE( \
+IF_FEATURE_ROTATE_LOGFILE( \
 	/* max size of file before rotation */  \
 	unsigned logFileSize;                   \
 	/* number of rotated message files */   \
@@ -68,12 +83,7 @@ USE_FEATURE_ROTATE_LOGFILE( \
 	unsigned curFileSize;                   \
 	smallint isRegular;                     \
 ) \
-USE_FEATURE_REMOTE_LOG( \
-	/* udp socket for remote logging */     \
-	int remoteFD;                           \
-	len_and_sockaddr* remoteAddr;           \
-) \
-USE_FEATURE_IPC_SYSLOG( \
+IF_FEATURE_IPC_SYSLOG( \
 	int shmid; /* ipc shared memory id */   \
 	int s_semid; /* ipc semaphore id */     \
 	int shm_size;                           \
@@ -89,10 +99,8 @@ struct globals {
 	GLOBALS
 
 #if ENABLE_FEATURE_REMOTE_LOG
-	unsigned last_dns_resolve;
-	char *remoteAddrStr;
+	llist_t *remoteHosts;
 #endif
-
 #if ENABLE_FEATURE_IPC_SYSLOG
 	struct shbuf_ds *shbuf;
 #endif
@@ -119,11 +127,8 @@ static const struct init_globals init_data = {
 #endif
 	.logLevel = 8,
 #if ENABLE_FEATURE_ROTATE_LOGFILE
-	.logFileSize = 200 * 1024,
+	.logFileSize = 2 * 1024 * 1024,
 	.logFileRotate = 1,
-#endif
-#if ENABLE_FEATURE_REMOTE_LOG
-	.remoteFD = -1,
 #endif
 #if ENABLE_FEATURE_IPC_SYSLOG
 	.shmid = -1,
@@ -147,41 +152,41 @@ enum {
 	OPTBIT_outfile, // -O
 	OPTBIT_loglevel, // -l
 	OPTBIT_small, // -S
-	USE_FEATURE_ROTATE_LOGFILE(OPTBIT_filesize   ,)	// -s
-	USE_FEATURE_ROTATE_LOGFILE(OPTBIT_rotatecnt  ,)	// -b
-	USE_FEATURE_REMOTE_LOG(    OPTBIT_remote     ,)	// -R
-	USE_FEATURE_REMOTE_LOG(    OPTBIT_locallog   ,)	// -L
-	USE_FEATURE_IPC_SYSLOG(    OPTBIT_circularlog,)	// -C
-	USE_FEATURE_SYSLOGD_DUP(   OPTBIT_dup        ,)	// -D
+	IF_FEATURE_ROTATE_LOGFILE(OPTBIT_filesize   ,)	// -s
+	IF_FEATURE_ROTATE_LOGFILE(OPTBIT_rotatecnt  ,)	// -b
+	IF_FEATURE_REMOTE_LOG(    OPTBIT_remotelog  ,)	// -R
+	IF_FEATURE_REMOTE_LOG(    OPTBIT_locallog   ,)	// -L
+	IF_FEATURE_IPC_SYSLOG(    OPTBIT_circularlog,)	// -C
+	IF_FEATURE_SYSLOGD_DUP(   OPTBIT_dup        ,)	// -D
 
 	OPT_mark        = 1 << OPTBIT_mark    ,
 	OPT_nofork      = 1 << OPTBIT_nofork  ,
 	OPT_outfile     = 1 << OPTBIT_outfile ,
 	OPT_loglevel    = 1 << OPTBIT_loglevel,
 	OPT_small       = 1 << OPTBIT_small   ,
-	OPT_filesize    = USE_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_filesize   )) + 0,
-	OPT_rotatecnt   = USE_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_rotatecnt  )) + 0,
-	OPT_remotelog   = USE_FEATURE_REMOTE_LOG(    (1 << OPTBIT_remote     )) + 0,
-	OPT_locallog    = USE_FEATURE_REMOTE_LOG(    (1 << OPTBIT_locallog   )) + 0,
-	OPT_circularlog = USE_FEATURE_IPC_SYSLOG(    (1 << OPTBIT_circularlog)) + 0,
-	OPT_dup         = USE_FEATURE_SYSLOGD_DUP(   (1 << OPTBIT_dup        )) + 0,
+	OPT_filesize    = IF_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_filesize   )) + 0,
+	OPT_rotatecnt   = IF_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_rotatecnt  )) + 0,
+	OPT_remotelog   = IF_FEATURE_REMOTE_LOG(    (1 << OPTBIT_remotelog  )) + 0,
+	OPT_locallog    = IF_FEATURE_REMOTE_LOG(    (1 << OPTBIT_locallog   )) + 0,
+	OPT_circularlog = IF_FEATURE_IPC_SYSLOG(    (1 << OPTBIT_circularlog)) + 0,
+	OPT_dup         = IF_FEATURE_SYSLOGD_DUP(   (1 << OPTBIT_dup        )) + 0,
 };
 #define OPTION_STR "m:nO:l:S" \
-	USE_FEATURE_ROTATE_LOGFILE("s:" ) \
-	USE_FEATURE_ROTATE_LOGFILE("b:" ) \
-	USE_FEATURE_REMOTE_LOG(    "R:" ) \
-	USE_FEATURE_REMOTE_LOG(    "L"  ) \
-	USE_FEATURE_IPC_SYSLOG(    "C::") \
-	USE_FEATURE_SYSLOGD_DUP(   "D"  )
+	IF_FEATURE_ROTATE_LOGFILE("s:" ) \
+	IF_FEATURE_ROTATE_LOGFILE("b:" ) \
+	IF_FEATURE_REMOTE_LOG(    "R:" ) \
+	IF_FEATURE_REMOTE_LOG(    "L"  ) \
+	IF_FEATURE_IPC_SYSLOG(    "C::") \
+	IF_FEATURE_SYSLOGD_DUP(   "D"  )
 #define OPTION_DECL *opt_m, *opt_l \
-	USE_FEATURE_ROTATE_LOGFILE(,*opt_s) \
-	USE_FEATURE_ROTATE_LOGFILE(,*opt_b) \
-	USE_FEATURE_IPC_SYSLOG(    ,*opt_C = NULL)
+	IF_FEATURE_ROTATE_LOGFILE(,*opt_s) \
+	IF_FEATURE_ROTATE_LOGFILE(,*opt_b) \
+	IF_FEATURE_IPC_SYSLOG(    ,*opt_C = NULL)
 #define OPTION_PARAM &opt_m, &G.logFilePath, &opt_l \
-	USE_FEATURE_ROTATE_LOGFILE(,&opt_s) \
-	USE_FEATURE_ROTATE_LOGFILE(,&opt_b) \
-	USE_FEATURE_REMOTE_LOG(    ,&G.remoteAddrStr) \
-	USE_FEATURE_IPC_SYSLOG(    ,&opt_C)
+	IF_FEATURE_ROTATE_LOGFILE(,&opt_s) \
+	IF_FEATURE_ROTATE_LOGFILE(,&opt_b) \
+	IF_FEATURE_REMOTE_LOG(	  ,&remoteAddrList) \
+	IF_FEATURE_IPC_SYSLOG(    ,&opt_C)
 
 
 /* circular buffer variables/structures */
@@ -192,8 +197,8 @@ enum {
 #error Please check CONFIG_FEATURE_IPC_SYSLOG_BUFFER_SIZE
 #endif
 
-/* our shared key */
-#define KEY_ID ((long)0x414e4547) /* "GENA" */
+/* our shared key (syslogd.c and logread.c must be in sync) */
+enum { KEY_ID = 0x414e4547 }; /* "GENA" */
 
 static void ipcsyslog_cleanup(void)
 {
@@ -211,7 +216,7 @@ static void ipcsyslog_cleanup(void)
 static void ipcsyslog_init(void)
 {
 	if (DEBUG)
-		printf("shmget(%lx, %d,...)\n", KEY_ID, G.shm_size);
+		printf("shmget(%x, %d,...)\n", (int)KEY_ID, G.shm_size);
 
 	G.shmid = shmget(KEY_ID, G.shm_size, IPC_CREAT | 0644);
 	if (G.shmid == -1) {
@@ -288,7 +293,9 @@ void log_to_shmem(const char *msg);
 /* Print a message to the log file. */
 static void log_locally(time_t now, char *msg)
 {
+#ifdef SYSLOGD_WRLOCK
 	struct flock fl;
+#endif
 	int len = strlen(msg);
 
 #if ENABLE_FEATURE_IPC_SYSLOG
@@ -298,17 +305,23 @@ static void log_locally(time_t now, char *msg)
 	}
 #endif
 	if (G.logFD >= 0) {
+		/* Reopen log file every second. This allows admin
+		 * to delete the file and not worry about restarting us.
+		 * This costs almost nothing since it happens
+		 * _at most_ once a second.
+		 */
 		if (!now)
 			now = time(NULL);
 		if (G.last_log_time != now) {
-			G.last_log_time = now; /* reopen log file every second */
+			G.last_log_time = now;
 			close(G.logFD);
 			goto reopen;
 		}
 	} else {
  reopen:
-		G.logFD = device_open(G.logFilePath, O_WRONLY | O_CREAT
-					| O_NOCTTY | O_APPEND | O_NONBLOCK);
+		G.logFD = open(G.logFilePath, O_WRONLY | O_CREAT
+					| O_NOCTTY | O_APPEND | O_NONBLOCK,
+					0666);
 		if (G.logFD < 0) {
 			/* cannot open logfile? - print to /dev/console then */
 			int fd = device_open(DEV_CONSOLE, O_WRONLY | O_NOCTTY | O_NONBLOCK);
@@ -329,11 +342,13 @@ static void log_locally(time_t now, char *msg)
 #endif
 	}
 
+#ifdef SYSLOGD_WRLOCK
 	fl.l_whence = SEEK_SET;
 	fl.l_start = 0;
 	fl.l_len = 1;
 	fl.l_type = F_WRLCK;
 	fcntl(G.logFD, F_SETLKW, &fl);
+#endif
 
 #if ENABLE_FEATURE_ROTATE_LOGFILE
 	if (G.logFileSize && G.isRegular && G.curFileSize > G.logFileSize) {
@@ -347,12 +362,15 @@ static void log_locally(time_t now, char *msg)
 				sprintf(newFile, "%s.%d", G.logFilePath, i);
 				if (i == 0) break;
 				sprintf(oldFile, "%s.%d", G.logFilePath, --i);
-				xrename(oldFile, newFile);
+				/* ignore errors - file might be missing */
+				rename(oldFile, newFile);
 			}
 			/* newFile == "f.0" now */
-			xrename(G.logFilePath, newFile);
+			rename(G.logFilePath, newFile);
+#ifdef SYSLOGD_WRLOCK
 			fl.l_type = F_UNLCK;
 			fcntl(G.logFD, F_SETLKW, &fl);
+#endif
 			close(G.logFD);
 			goto reopen;
 		}
@@ -360,9 +378,11 @@ static void log_locally(time_t now, char *msg)
 	}
 	G.curFileSize +=
 #endif
-	                full_write(G.logFD, msg, len);
+			full_write(G.logFD, msg, len);
+#ifdef SYSLOGD_WRLOCK
 	fl.l_type = F_UNLCK;
 	fcntl(G.logFD, F_SETLKW, &fl);
+#endif
 }
 
 static void parse_fac_prio_20(int pri, char *res20)
@@ -402,6 +422,8 @@ static void timestamp_and_log(int pri, char *msg, int len)
 	char *timestamp;
 	time_t now;
 
+	/* Jan 18 00:11:22 msg... */
+	/* 01234567890123456 */
 	if (len < 16 || msg[3] != ' ' || msg[6] != ' '
 	 || msg[9] != ':' || msg[12] != ':' || msg[15] != ' '
 	) {
@@ -428,6 +450,7 @@ static void timestamp_and_log(int pri, char *msg, int len)
 
 static void timestamp_and_log_internal(const char *msg)
 {
+	/* -L, or no -R */
 	if (ENABLE_FEATURE_REMOTE_LOG && !(option_mask32 & OPT_locallog))
 		return;
 	timestamp_and_log(LOG_SYSLOG | LOG_INFO, (char*)msg, 0);
@@ -472,15 +495,6 @@ static void split_escape_and_log(char *tmpbuf, int len)
 	}
 }
 
-static void quit_signal(int sig)
-{
-	timestamp_and_log_internal("syslogd exiting");
-	puts("syslogd exiting");
-	if (ENABLE_FEATURE_IPC_SYSLOG)
-		ipcsyslog_cleanup();
-	kill_myself_with_sig(sig);
-}
-
 #ifdef SYSLOGD_MARK
 static void do_mark(int sig)
 {
@@ -498,6 +512,9 @@ static NOINLINE int create_socket(void)
 	struct sockaddr_un sunx;
 	int sock_fd;
 	char *dev_log_name;
+
+	if (sd_listen_fds(1) == 1 && sd_is_socket_unix(SD_LISTEN_FDS_START, SOCK_DGRAM, -1, "/dev/log", 0) > 0)
+		return SD_LISTEN_FDS_START;
 
 	memset(&sunx, 0, sizeof(sunx));
 	sunx.sun_family = AF_UNIX;
@@ -520,27 +537,30 @@ static NOINLINE int create_socket(void)
 }
 
 #if ENABLE_FEATURE_REMOTE_LOG
-static int try_to_resolve_remote(void)
+static int try_to_resolve_remote(remoteHost_t *rh)
 {
-	if (!G.remoteAddr) {
+	if (!rh->remoteAddr) {
 		unsigned now = monotonic_sec();
 
 		/* Don't resolve name too often - DNS timeouts can be big */
-		if ((now - G.last_dns_resolve) < DNS_WAIT_SEC)
+		if ((now - rh->last_dns_resolve) < DNS_WAIT_SEC)
 			return -1;
-		G.last_dns_resolve = now;
-		G.remoteAddr = host2sockaddr(G.remoteAddrStr, 514);
-		if (!G.remoteAddr)
+		rh->last_dns_resolve = now;
+		rh->remoteAddr = host2sockaddr(rh->remoteHostname, 514);
+		if (!rh->remoteAddr)
 			return -1;
 	}
-	return socket(G.remoteAddr->u.sa.sa_family, SOCK_DGRAM, 0);
+	return socket(rh->remoteAddr->u.sa.sa_family, SOCK_DGRAM, 0);
 }
 #endif
 
-static void do_syslogd(void) ATTRIBUTE_NORETURN;
+static void do_syslogd(void) NORETURN;
 static void do_syslogd(void)
 {
 	int sock_fd;
+#if ENABLE_FEATURE_REMOTE_LOG
+	llist_t *item;
+#endif
 #if ENABLE_FEATURE_SYSLOGD_DUP
 	int last_sz = -1;
 	char *last_buf;
@@ -549,14 +569,11 @@ static void do_syslogd(void)
 #define recvbuf (G.recvbuf)
 #endif
 
-	/* Set up signal handlers */
-	bb_signals(0
-		+ (1 << SIGINT)
-		+ (1 << SIGTERM)
-		+ (1 << SIGQUIT)
-		, quit_signal);
+	/* Set up signal handlers (so that they interrupt read()) */
+	signal_no_SA_RESTART_empty_mask(SIGTERM, record_signo);
+	signal_no_SA_RESTART_empty_mask(SIGINT, record_signo);
+	//signal_no_SA_RESTART_empty_mask(SIGQUIT, record_signo);
 	signal(SIGHUP, SIG_IGN);
-	/* signal(SIGCHLD, SIG_IGN); - why? */
 #ifdef SYSLOGD_MARK
 	signal(SIGALRM, do_mark);
 	alarm(G.markInterval);
@@ -569,8 +586,8 @@ static void do_syslogd(void)
 
 	timestamp_and_log_internal("syslogd started: BusyBox v" BB_VER);
 
-	for (;;) {
-		size_t sz;
+	while (!bb_got_signal) {
+		ssize_t sz;
 
 #if ENABLE_FEATURE_SYSLOGD_DUP
 		last_buf = recvbuf;
@@ -580,9 +597,12 @@ static void do_syslogd(void)
 			recvbuf = G.recvbuf;
 #endif
  read_again:
-		sz = safe_read(sock_fd, recvbuf, MAX_READ - 1);
-		if (sz < 0)
-			bb_perror_msg_and_die("read from /dev/log");
+		sz = read(sock_fd, recvbuf, MAX_READ - 1);
+		if (sz < 0) {
+			if (!bb_got_signal)
+				bb_perror_msg("read from /dev/log");
+			break;
+		}
 
 		/* Drop trailing '\n' and NULs (typically there is one NUL) */
 		while (1) {
@@ -606,58 +626,78 @@ static void do_syslogd(void)
 		last_sz = sz;
 #endif
 #if ENABLE_FEATURE_REMOTE_LOG
+		/* Stock syslogd sends it '\n'-terminated
+		 * over network, mimic that */
+		recvbuf[sz] = '\n';
+
 		/* We are not modifying log messages in any way before send */
 		/* Remote site cannot trust _us_ anyway and need to do validation again */
-		if (G.remoteAddrStr) {
-			if (-1 == G.remoteFD) {
-				G.remoteFD = try_to_resolve_remote();
-				if (-1 == G.remoteFD)
-					goto no_luck;
+		for (item = G.remoteHosts; item != NULL; item = item->link) {
+			remoteHost_t *rh = (remoteHost_t *)item->data;
+
+			if (rh->remoteFD == -1) {
+				rh->remoteFD = try_to_resolve_remote(rh);
+				if (rh->remoteFD == -1)
+					continue;
 			}
-			/* Stock syslogd sends it '\n'-terminated
-			 * over network, mimic that */
-			recvbuf[sz] = '\n';
-			/* send message to remote logger, ignore possible error */
+			/* Send message to remote logger, ignore possible error */
 			/* TODO: on some errors, close and set G.remoteFD to -1
 			 * so that DNS resolution and connect is retried? */
-			sendto(G.remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
-				    &G.remoteAddr->u.sa, G.remoteAddr->len);
- no_luck: ;
+			sendto(rh->remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
+				&(rh->remoteAddr->u.sa), rh->remoteAddr->len);
 		}
 #endif
 		if (!ENABLE_FEATURE_REMOTE_LOG || (option_mask32 & OPT_locallog)) {
 			recvbuf[sz] = '\0'; /* ensure it *is* NUL terminated */
 			split_escape_and_log(recvbuf, sz);
 		}
-	} /* for (;;) */
+	} /* while (!bb_got_signal) */
+
+	timestamp_and_log_internal("syslogd exiting");
+	puts("syslogd exiting");
+	if (ENABLE_FEATURE_IPC_SYSLOG)
+		ipcsyslog_cleanup();
+	kill_myself_with_sig(bb_got_signal);
+#undef recvbuf
 }
 
 int syslogd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int syslogd_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int syslogd_main(int argc UNUSED_PARAM, char **argv)
 {
+	int opts;
 	char OPTION_DECL;
+#if ENABLE_FEATURE_REMOTE_LOG
+	llist_t *remoteAddrList = NULL;
+#endif
 
 	INIT_G();
+
+	/* No non-option params, -R can occur multiple times */
+	opt_complementary = "=0" IF_FEATURE_REMOTE_LOG(":R::");
+	opts = getopt32(argv, OPTION_STR, OPTION_PARAM);
 #if ENABLE_FEATURE_REMOTE_LOG
-	G.last_dns_resolve = monotonic_sec() - DNS_WAIT_SEC - 1;
+	while (remoteAddrList) {
+		remoteHost_t *rh = xzalloc(sizeof(*rh));
+		rh->remoteHostname = llist_pop(&remoteAddrList);
+		rh->remoteFD = -1;
+		rh->last_dns_resolve = monotonic_sec() - DNS_WAIT_SEC - 1;
+		llist_add_to(&G.remoteHosts, rh);
+	}
 #endif
 
-	/* do normal option parsing */
-	opt_complementary = "=0"; /* no non-option params */
-	getopt32(argv, OPTION_STR, OPTION_PARAM);
 #ifdef SYSLOGD_MARK
-	if (option_mask32 & OPT_mark) // -m
+	if (opts & OPT_mark) // -m
 		G.markInterval = xatou_range(opt_m, 0, INT_MAX/60) * 60;
 #endif
-	//if (option_mask32 & OPT_nofork) // -n
-	//if (option_mask32 & OPT_outfile) // -O
-	if (option_mask32 & OPT_loglevel) // -l
+	//if (opts & OPT_nofork) // -n
+	//if (opts & OPT_outfile) // -O
+	if (opts & OPT_loglevel) // -l
 		G.logLevel = xatou_range(opt_l, 1, 8);
-	//if (option_mask32 & OPT_small) // -S
+	//if (opts & OPT_small) // -S
 #if ENABLE_FEATURE_ROTATE_LOGFILE
-	if (option_mask32 & OPT_filesize) // -s
+	if (opts & OPT_filesize) // -s
 		G.logFileSize = xatou_range(opt_s, 0, INT_MAX/1024) * 1024;
-	if (option_mask32 & OPT_rotatecnt) // -b
+	if (opts & OPT_rotatecnt) // -b
 		G.logFileRotate = xatou_range(opt_b, 0, 99);
 #endif
 #if ENABLE_FEATURE_IPC_SYSLOG
@@ -666,18 +706,29 @@ int syslogd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 #endif
 
 	/* If they have not specified remote logging, then log locally */
-	if (ENABLE_FEATURE_REMOTE_LOG && !(option_mask32 & OPT_remotelog))
+	if (ENABLE_FEATURE_REMOTE_LOG && !(opts & OPT_remotelog)) // -R
 		option_mask32 |= OPT_locallog;
 
 	/* Store away localhost's name before the fork */
 	G.hostname = safe_gethostname();
 	*strchrnul(G.hostname, '.') = '\0';
 
-	if (!(option_mask32 & OPT_nofork)) {
+	if (!(opts & OPT_nofork)) {
 		bb_daemonize_or_rexec(DAEMON_CHDIR_ROOT, argv);
 	}
-	umask(0);
+	//umask(0); - why??
 	write_pidfile("/var/run/syslogd.pid");
 	do_syslogd();
 	/* return EXIT_SUCCESS; */
 }
+
+/* Clean up. Needed because we are included from syslogd_and_logger.c */
+#undef DEBUG
+#undef SYSLOGD_MARK
+#undef SYSLOGD_WRLOCK
+#undef G
+#undef GLOBALS
+#undef INIT_G
+#undef OPTION_STR
+#undef OPTION_DECL
+#undef OPTION_PARAM

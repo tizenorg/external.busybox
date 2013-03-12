@@ -1,0 +1,2 @@
+bin/busybox usr/sbin/chpasswd
+bin/busybox usr/bin/passwd

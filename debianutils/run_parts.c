@@ -2,7 +2,7 @@
 /*
  * Mini run-parts implementation for busybox
  *
- * Copyright (C) 2007 Bernhard Fischer
+ * Copyright (C) 2007 Bernhard Reutner-Fischer
  *
  * Based on a older version that was in busybox which was 1k big..
  *   Copyright (C) 2001 by Emanuele Aina <emanuele.aina@tiscali.it>
@@ -30,21 +30,19 @@
  * -u MASK      umask. Set the umask of the program executed to MASK.
  */
 
-#include <getopt.h>
-
 #include "libbb.h"
 
 struct globals {
 	char **names;
 	int    cur;
 	char  *cmd[1];
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define names (G.names)
 #define cur   (G.cur  )
 #define cmd   (G.cmd  )
 
-enum { NUM_CMD = (COMMON_BUFSIZE - sizeof(struct globals)) / sizeof(cmd[0]) };
+enum { NUM_CMD = (COMMON_BUFSIZE - sizeof(G)) / sizeof(cmd[0]) - 1 };
 
 enum {
 	OPT_r = (1 << 0),
@@ -79,7 +77,7 @@ static int bb_alphasort(const void *p1, const void *p2)
 	return (option_mask32 & OPT_r) ? -r : r;
 }
 
-static int act(const char *file, struct stat *statbuf, void *args ATTRIBUTE_UNUSED, int depth)
+static int FAST_FUNC act(const char *file, struct stat *statbuf, void *args UNUSED_PARAM, int depth)
 {
 	if (depth == 1)
 		return TRUE;
@@ -92,9 +90,9 @@ static int act(const char *file, struct stat *statbuf, void *args ATTRIBUTE_UNUS
 		return SKIP;
 	}
 
-	names = xrealloc(names, (cur + 2) * sizeof(names[0]));
+	names = xrealloc_vector(names, 4, cur);
 	names[cur++] = xstrdup(file);
-	names[cur] = NULL;
+	/*names[cur] = NULL; - xrealloc_vector did it */
 
 	return TRUE;
 }
@@ -113,7 +111,7 @@ static const char runparts_longopts[] ALIGN1 =
 #endif
 
 int run_parts_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int run_parts_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int run_parts_main(int argc UNUSED_PARAM, char **argv)
 {
 	const char *umask_p = "22";
 	llist_t *arg_list = NULL;
@@ -124,17 +122,14 @@ int run_parts_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	applet_long_options = runparts_longopts;
 #endif
 	/* We require exactly one argument: the directory name */
-	/* We require exactly one argument: the directory name */
 	opt_complementary = "=1:a::";
-	getopt32(argv, "ra:u:t"USE_FEATURE_RUN_PARTS_FANCY("l"), &arg_list, &umask_p);
+	getopt32(argv, "ra:u:t"IF_FEATURE_RUN_PARTS_FANCY("l"), &arg_list, &umask_p);
 
 	umask(xstrtou_range(umask_p, 8, 0, 07777));
 
 	n = 1;
 	while (arg_list && n < NUM_CMD) {
-		cmd[n] = arg_list->data;
-		arg_list = arg_list->link;
-		n++;
+		cmd[n++] = llist_pop(&arg_list);
 	}
 	/* cmd[n] = NULL; - is already zeroed out */
 
@@ -163,14 +158,14 @@ int run_parts_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			continue;
 		}
 		cmd[0] = name;
-		ret = wait4pid(spawn(cmd));
+		ret = spawn_and_wait(cmd);
 		if (ret == 0)
 			continue;
 		n = 1;
 		if (ret < 0)
-			bb_perror_msg("can't exec %s", name);
+			bb_perror_msg("can't execute '%s'", name);
 		else /* ret > 0 */
-			bb_error_msg("%s exited with code %d", name, ret);
+			bb_error_msg("%s exited with code %d", name, ret & 0xff);
 	}
 
 	return n;

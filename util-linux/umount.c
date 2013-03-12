@@ -7,10 +7,53 @@
  *
  * Licensed under GPL version 2, see file LICENSE in this tarball for details.
  */
-
 #include <mntent.h>
-#include <getopt.h>
+#include <sys/mount.h>
+/* Make sure we have all the new mount flags we actually try to use. */
+#ifndef MS_BIND
+# define MS_BIND        (1 << 12)
+#endif
+#ifndef MS_MOVE
+# define MS_MOVE        (1 << 13)
+#endif
+#ifndef MS_RECURSIVE
+# define MS_RECURSIVE   (1 << 14)
+#endif
+#ifndef MS_SILENT
+# define MS_SILENT      (1 << 15)
+#endif
+/* The shared subtree stuff, which went in around 2.6.15. */
+#ifndef MS_UNBINDABLE
+# define MS_UNBINDABLE  (1 << 17)
+#endif
+#ifndef MS_PRIVATE
+# define MS_PRIVATE     (1 << 18)
+#endif
+#ifndef MS_SLAVE
+# define MS_SLAVE       (1 << 19)
+#endif
+#ifndef MS_SHARED
+# define MS_SHARED      (1 << 20)
+#endif
+#ifndef MS_RELATIME
+# define MS_RELATIME    (1 << 21)
+#endif
 #include "libbb.h"
+#ifndef PATH_MAX
+# define PATH_MAX (4*1024)
+#endif
+
+
+#if defined(__dietlibc__)
+/* 16.12.2006, Sampo Kellomaki (sampo@iki.fi)
+ * dietlibc-0.30 does not have implementation of getmntent_r() */
+static struct mntent *getmntent_r(FILE* stream, struct mntent* result,
+		char* buffer UNUSED_PARAM, int bufsize UNUSED_PARAM)
+{
+	struct mntent* ment = getmntent(stream);
+	return memcpy(result, ment, sizeof(*ment));
+}
+#endif
 
 /* ignored: -v -d -t -i */
 #define OPTION_STRING           "fldnra" "vdt:i"
@@ -27,10 +70,10 @@
 //#define MNT_DETACH 0x00000002 /* Just detach from the tree */
 
 int umount_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int umount_main(int argc UNUSED_PARAM, char **argv)
 {
 	int doForce;
-	char *const path = xmalloc(PATH_MAX + 2); /* to save stack */
+	char *const buf = xmalloc(PATH_MAX * 2 + 128); /* to save stack */
 	struct mntent me;
 	FILE *fp;
 	char *fstype = NULL;
@@ -59,13 +102,13 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	fp = setmntent(bb_path_mtab_file, "r");
 	if (!fp) {
 		if (opt & OPT_ALL)
-			bb_error_msg_and_die("cannot open %s", bb_path_mtab_file);
+			bb_error_msg_and_die("can't open '%s'", bb_path_mtab_file);
 	} else {
-		while (getmntent_r(fp, &me, path, PATH_MAX)) {
+		while (getmntent_r(fp, &me, buf, PATH_MAX * 2 + 128)) {
 			/* Match fstype if passed */
-			if (fstype && match_fstype(&me, fstype))
+			if (!match_fstype(&me, fstype))
 				continue;
-			m = xmalloc(sizeof(struct mtab_list));
+			m = xzalloc(sizeof(*m));
 			m->next = mtl;
 			m->device = xstrdup(me.mnt_fsname);
 			m->dir = xstrdup(me.mnt_dir);
@@ -85,10 +128,11 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	for (;;) {
 		int curstat;
 		char *zapit = *argv;
+		char *path;
 
 		// Do we already know what to umount this time through the loop?
 		if (m)
-			safe_strncpy(path, m->dir, PATH_MAX);
+			path = xstrdup(m->dir);
 		// For umount -a, end of mtab means time to exit.
 		else if (opt & OPT_ALL)
 			break;
@@ -97,10 +141,12 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			if (!zapit)
 				break;
 			argv++;
-			realpath(zapit, path);
-			for (m = mtl; m; m = m->next)
-				if (!strcmp(path, m->dir) || !strcmp(path, m->device))
-					break;
+			path = xmalloc_realpath(zapit);
+			if (path) {
+				for (m = mtl; m; m = m->next)
+					if (strcmp(path, m->dir) == 0 || strcmp(path, m->device) == 0)
+						break;
+			}
 		}
 		// If we couldn't find this sucker in /etc/mtab, punt by passing our
 		// command line argument straight to the umount syscall.  Otherwise,
@@ -122,13 +168,13 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 				const char *msg = "%s busy - remounted read-only";
 				curstat = mount(m->device, zapit, NULL, MS_REMOUNT|MS_RDONLY, NULL);
 				if (curstat) {
-					msg = "cannot remount %s read-only";
+					msg = "can't remount %s read-only";
 					status = EXIT_FAILURE;
 				}
 				bb_error_msg(msg, m->device);
 			} else {
 				status = EXIT_FAILURE;
-				bb_perror_msg("cannot %sumount %s", (doForce ? "forcibly " : ""), zapit);
+				bb_perror_msg("can't %sumount %s", (doForce ? "forcibly " : ""), zapit);
 			}
 		} else {
 			// De-allocate the loop device.  This ioctl should be ignored on
@@ -142,9 +188,13 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		// Find next matching mtab entry for -a or umount /dev
 		// Note this means that "umount /dev/blah" will unmount all instances
 		// of /dev/blah, not just the most recent.
-		if (m) while ((m = m->next) != NULL)
-			if ((opt & OPT_ALL) || !strcmp(path, m->device))
-				break;
+		if (m) {
+			while ((m = m->next) != NULL)
+				// NB: if m is non-NULL, path is non-NULL as well
+				if ((opt & OPT_ALL) || strcmp(path, m->device) == 0)
+					break;
+		}
+		free(path);
 	}
 
 	// Free mtab list if necessary
@@ -156,7 +206,7 @@ int umount_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			free(mtl);
 			mtl = m;
 		}
-		free(path);
+		free(buf);
 	}
 
 	return status;

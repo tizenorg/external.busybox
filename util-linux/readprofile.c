@@ -42,7 +42,7 @@ static const char defaultmap[] ALIGN1 = "/boot/System.map";
 static const char defaultpro[] ALIGN1 = "/proc/profile";
 
 int readprofile_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int readprofile_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int readprofile_main(int argc UNUSED_PARAM, char **argv)
 {
 	FILE *map;
 	const char *mapFile, *proFile;
@@ -109,9 +109,9 @@ int readprofile_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	 * Use an fd for the profiling buffer, to skip stdio overhead
 	 */
 	len = MAXINT(ssize_t);
-	buf = xmalloc_open_read_close(proFile, &len);
+	buf = xmalloc_xopen_read_close(proFile, &len);
 	if (!optNative) {
-		int entries = len/sizeof(*buf);
+		int entries = len / sizeof(*buf);
 		int big = 0, small = 0, i;
 		unsigned *p;
 
@@ -144,7 +144,7 @@ int readprofile_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 	total = 0;
 
-	map = xfopen(mapFile, "r");
+	map = xfopen_for_read(mapFile);
 
 	while (fgets(mapline, S_LEN, map)) {
 		if (sscanf(mapline, "%llx %s %s", &fn_add, mode, fn_name) != 3)
@@ -176,9 +176,11 @@ int readprofile_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		/* ignore any LEADING (before a '[tT]' symbol is found)
 		   Absolute symbols */
 		if ((*mode == 'A' || *mode == '?') && total == 0) continue;
-		if (*mode != 'T' && *mode != 't' &&
-		    *mode != 'W' && *mode != 'w')
+		if (*mode != 'T' && *mode != 't'
+		 && *mode != 'W' && *mode != 'w'
+		) {
 			break;	/* only text is profiled */
+		}
 
 		if (indx >= len / sizeof(*buf))
 			bb_error_msg_and_die("profile address out of range. "

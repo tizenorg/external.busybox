@@ -24,25 +24,28 @@ static void convert(char *fn, int conv_type)
 {
 	FILE *in, *out;
 	int i;
-	char *name_buf = name_buf; /* for compiler */
+	char *temp_fn = temp_fn; /* for compiler */
+	char *resolved_fn = resolved_fn;
 
 	in = stdin;
 	out = stdout;
 	if (fn != NULL) {
-		in = xfopen(fn, "r");
-		/*
-		   The file is then created with mode read/write and
-		   permissions 0666 for glibc 2.0.6 and earlier or
-		   0600 for glibc 2.0.7 and later.
-		 */
-		name_buf = xasprintf("%sXXXXXX", fn);
-		i = mkstemp(name_buf);
+		struct stat st;
+
+		resolved_fn = xmalloc_follow_symlinks(fn);
+		if (resolved_fn == NULL)
+			bb_simple_perror_msg_and_die(fn);
+		in = xfopen_for_read(resolved_fn);
+		fstat(fileno(in), &st);
+
+		temp_fn = xasprintf("%sXXXXXX", resolved_fn);
+		i = mkstemp(temp_fn);
 		if (i == -1
-		 || fchmod(i, 0600) == -1
-		 || !(out = fdopen(i, "w+"))
+		 || fchmod(i, st.st_mode) == -1
 		) {
-			bb_perror_nomsg_and_die();
+			bb_simple_perror_msg_and_die(temp_fn);
 		}
+		out = xfdopen_for_write(i);
 	}
 
 	while ((i = fgetc(in)) != EOF) {
@@ -56,17 +59,17 @@ static void convert(char *fn, int conv_type)
 
 	if (fn != NULL) {
 		if (fclose(in) < 0 || fclose(out) < 0) {
-			unlink(name_buf);
+			unlink(temp_fn);
 			bb_perror_nomsg_and_die();
 		}
-// TODO: destroys symlinks. See how passwd handles this
-		xrename(name_buf, fn);
-		free(name_buf);
+		xrename(temp_fn, resolved_fn);
+		free(temp_fn);
+		free(resolved_fn);
 	}
 }
 
 int dos2unix_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int dos2unix_main(int argc, char **argv)
+int dos2unix_main(int argc UNUSED_PARAM, char **argv)
 {
 	int o, conv_type;
 
@@ -85,11 +88,11 @@ int dos2unix_main(int argc, char **argv)
 	if (o)
 		conv_type = o;
 
+	argv += optind;
 	do {
 		/* might be convert(NULL) if there is no filename given */
-		convert(argv[optind], conv_type);
-		optind++;
-	} while (optind < argc);
+		convert(*argv, conv_type);
+	} while (*argv && *++argv);
 
 	return 0;
 }

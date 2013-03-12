@@ -4,17 +4,16 @@
  *
  *  Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
-
 #include "libbb.h"
 #include "unarchive.h"
 
 enum {
-	OPT_STDOUT = 0x1,
-	OPT_FORCE = 0x2,
-/* gunzip and bunzip2 only: */
-	OPT_VERBOSE = 0x4,
-	OPT_DECOMPRESS = 0x8,
-	OPT_TEST = 0x10,
+	OPT_STDOUT     = 1 << 0,
+	OPT_FORCE      = 1 << 1,
+	/* only some decompressors: */
+	OPT_VERBOSE    = 1 << 2,
+	OPT_DECOMPRESS = 1 << 3,
+	OPT_TEST       = 1 << 4,
 };
 
 static
@@ -28,15 +27,22 @@ int open_to_or_warn(int to_fd, const char *filename, int flags, int mode)
 	return 0;
 }
 
-int bbunpack(char **argv,
-	char* (*make_new_name)(char *filename),
-	USE_DESKTOP(long long) int (*unpacker)(void)
+char* FAST_FUNC append_ext(char *filename, const char *expected_ext)
+{
+	return xasprintf("%s.%s", filename, expected_ext);
+}
+
+int FAST_FUNC bbunpack(char **argv,
+	IF_DESKTOP(long long) int FAST_FUNC (*unpacker)(unpack_info_t *info),
+	char* FAST_FUNC (*make_new_name)(char *filename, const char *expected_ext),
+	const char *expected_ext
 )
 {
 	struct stat stat_buf;
-	USE_DESKTOP(long long) int status;
+	IF_DESKTOP(long long) int status;
 	char *filename, *new_name;
 	smallint exitcode = 0;
+	unpack_info_t info;
 
 	do {
 		/* NB: new_name is *maybe* malloc'ed! */
@@ -68,11 +74,17 @@ int bbunpack(char **argv,
 
 		/* Open dst if we are going to unpack to file */
 		if (filename) {
-			new_name = make_new_name(filename);
+			new_name = make_new_name(filename, expected_ext);
 			if (!new_name) {
 				bb_error_msg("%s: unknown suffix - ignored", filename);
 				goto err;
 			}
+
+			/* -f: overwrite existing output files */
+			if (option_mask32 & OPT_FORCE) {
+				unlink(new_name);
+			}
+
 			/* O_EXCL: "real" bunzip2 doesn't overwrite files */
 			/* GNU gunzip does not bail out, but goes to next file */
 			if (open_to_or_warn(STDOUT_FILENO, new_name, O_WRONLY | O_CREAT | O_EXCL,
@@ -86,14 +98,29 @@ int bbunpack(char **argv,
 					"use -f to force it");
 		}
 
-		status = unpacker();
+		/* memset(&info, 0, sizeof(info)); */
+		info.mtime = 0; /* so far it has one member only */
+		status = unpacker(&info);
 		if (status < 0)
 			exitcode = 1;
+		xclose(STDOUT_FILENO); /* with error check! */
 
 		if (filename) {
 			char *del = new_name;
 			if (status >= 0) {
-				/* TODO: restore user/group/times here? */
+				/* TODO: restore other things? */
+				if (info.mtime) {
+					struct timeval times[2];
+
+					times[1].tv_sec = times[0].tv_sec = info.mtime;
+					times[1].tv_usec = times[0].tv_usec = 0;
+					/* Note: we closed it first.
+					 * On some systems calling utimes
+					 * then closing resets the mtime
+					 * back to current time. */
+					utimes(new_name, times); /* ignoring errors */
+				}
+
 				/* Delete _compressed_ file */
 				del = filename;
 				/* restore extension (unless tgz -> tar case) */
@@ -119,10 +146,9 @@ int bbunpack(char **argv,
 	return exitcode;
 }
 
-#if ENABLE_BUNZIP2 || ENABLE_UNLZMA || ENABLE_UNCOMPRESS
-
+#if ENABLE_UNCOMPRESS || ENABLE_BUNZIP2 || ENABLE_UNLZMA || ENABLE_UNXZ
 static
-char* make_new_name_generic(char *filename, const char *expected_ext)
+char* FAST_FUNC make_new_name_generic(char *filename, const char *expected_ext)
 {
 	char *extension = strrchr(filename, '.');
 	if (!extension || strcmp(extension + 1, expected_ext) != 0) {
@@ -133,42 +159,35 @@ char* make_new_name_generic(char *filename, const char *expected_ext)
 	*extension = '\0';
 	return filename;
 }
-
 #endif
 
 
 /*
- *  Modified for busybox by Glenn McGrath
- *  Added support output to stdout by Thomas Lundquist <thomasez@zelow.no>
+ * Uncompress applet for busybox (c) 2002 Glenn McGrath
  *
- *  Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
-
-#if ENABLE_BUNZIP2
-
+#if ENABLE_UNCOMPRESS
 static
-char* make_new_name_bunzip2(char *filename)
+IF_DESKTOP(long long) int FAST_FUNC unpack_uncompress(unpack_info_t *info UNUSED_PARAM)
 {
-	return make_new_name_generic(filename, "bz2");
-}
+	IF_DESKTOP(long long) int status = -1;
 
-static
-USE_DESKTOP(long long) int unpack_bunzip2(void)
-{
-	return unpack_bz2_stream(STDIN_FILENO, STDOUT_FILENO);
+	if ((xread_char(STDIN_FILENO) != 0x1f) || (xread_char(STDIN_FILENO) != 0x9d)) {
+		bb_error_msg("invalid magic");
+	} else {
+		status = unpack_Z_stream(STDIN_FILENO, STDOUT_FILENO);
+	}
+	return status;
 }
-
-int bunzip2_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int bunzip2_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int uncompress_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+int uncompress_main(int argc UNUSED_PARAM, char **argv)
 {
-	getopt32(argv, "cfvdt");
+	getopt32(argv, "cf");
 	argv += optind;
-	if (applet_name[2] == 'c')
-		option_mask32 |= OPT_STDOUT;
 
-	return bbunpack(argv, make_new_name_bunzip2, unpack_bunzip2);
+	return bbunpack(argv, unpack_uncompress, make_new_name_generic, "Z");
 }
-
 #endif
 
 
@@ -199,11 +218,9 @@ int bunzip2_main(int argc ATTRIBUTE_UNUSED, char **argv)
  * See the license_msg below and the file COPYING for the software license.
  * See the file algorithm.doc for the compression algorithms and file formats.
  */
-
 #if ENABLE_GUNZIP
-
 static
-char* make_new_name_gunzip(char *filename)
+char* FAST_FUNC make_new_name_gunzip(char *filename, const char *expected_ext UNUSED_PARAM)
 {
 	char *extension = strrchr(filename, '.');
 
@@ -212,8 +229,8 @@ char* make_new_name_gunzip(char *filename)
 
 	extension++;
 	if (strcmp(extension, "tgz" + 1) == 0
-#if ENABLE_FEATURE_GUNZIP_UNCOMPRESS
-	 || strcmp(extension, "Z") == 0
+#if ENABLE_FEATURE_SEAMLESS_Z
+	 || (extension[0] == 'Z' && extension[1] == '\0')
 #endif
 	) {
 		extension[-1] = '\0';
@@ -227,21 +244,20 @@ char* make_new_name_gunzip(char *filename)
 	}
 	return filename;
 }
-
 static
-USE_DESKTOP(long long) int unpack_gunzip(void)
+IF_DESKTOP(long long) int FAST_FUNC unpack_gunzip(unpack_info_t *info)
 {
-	USE_DESKTOP(long long) int status = -1;
+	IF_DESKTOP(long long) int status = -1;
 
 	/* do the decompression, and cleanup */
 	if (xread_char(STDIN_FILENO) == 0x1f) {
 		unsigned char magic2;
 
 		magic2 = xread_char(STDIN_FILENO);
-		if (ENABLE_FEATURE_GUNZIP_UNCOMPRESS && magic2 == 0x9d) {
-			status = uncompress(STDIN_FILENO, STDOUT_FILENO);
+		if (ENABLE_FEATURE_SEAMLESS_Z && magic2 == 0x9d) {
+			status = unpack_Z_stream(STDIN_FILENO, STDOUT_FILENO);
 		} else if (magic2 == 0x8b) {
-			status = unpack_gz_stream(STDIN_FILENO, STDOUT_FILENO);
+			status = unpack_gz_stream_with_info(STDIN_FILENO, STDOUT_FILENO, info);
 		} else {
 			goto bad_magic;
 		}
@@ -255,19 +271,68 @@ USE_DESKTOP(long long) int unpack_gunzip(void)
 	}
 	return status;
 }
-
+/*
+ * Linux kernel build uses gzip -d -n. We accept and ignore it.
+ * Man page says:
+ * -n --no-name
+ * gzip: do not save the original file name and time stamp.
+ * (The original name is always saved if the name had to be truncated.)
+ * gunzip: do not restore the original file name/time even if present
+ * (remove only the gzip suffix from the compressed file name).
+ * This option is the default when decompressing.
+ * -N --name
+ * gzip: always save the original file name and time stamp (this is the default)
+ * gunzip: restore the original file name and time stamp if present.
+ */
 int gunzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int gunzip_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int gunzip_main(int argc UNUSED_PARAM, char **argv)
 {
-	getopt32(argv, "cfvdt");
+	getopt32(argv, "cfvdtn");
 	argv += optind;
 	/* if called as zcat */
 	if (applet_name[1] == 'c')
 		option_mask32 |= OPT_STDOUT;
 
-	return bbunpack(argv, make_new_name_gunzip, unpack_gunzip);
+	return bbunpack(argv, unpack_gunzip, make_new_name_gunzip, /*unused:*/ NULL);
 }
+#endif
 
+
+/*
+ * Modified for busybox by Glenn McGrath
+ * Added support output to stdout by Thomas Lundquist <thomasez@zelow.no>
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ */
+//usage:#define bunzip2_trivial_usage
+//usage:       "[OPTIONS] [FILE]..."
+//usage:#define bunzip2_full_usage "\n\n"
+//usage:       "Decompress FILEs (or stdin)\n"
+//usage:     "\nOptions:"
+//usage:     "\n	-c	Write to stdout"
+//usage:     "\n	-f	Force"
+//usage:#define bzcat_trivial_usage
+//usage:       "FILE"
+//usage:#define bzcat_full_usage "\n\n"
+//usage:       "Decompress to stdout"
+//applet:IF_BUNZIP2(APPLET(bunzip2, _BB_DIR_USR_BIN, _BB_SUID_DROP))
+//applet:IF_BUNZIP2(APPLET_ODDNAME(bzcat, bunzip2, _BB_DIR_USR_BIN, _BB_SUID_DROP, bzcat))
+#if ENABLE_BUNZIP2
+static
+IF_DESKTOP(long long) int FAST_FUNC unpack_bunzip2(unpack_info_t *info UNUSED_PARAM)
+{
+	return unpack_bz2_stream_prime(STDIN_FILENO, STDOUT_FILENO);
+}
+int bunzip2_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+int bunzip2_main(int argc UNUSED_PARAM, char **argv)
+{
+	getopt32(argv, "cfvdt");
+	argv += optind;
+	if (applet_name[2] == 'c') /* bzcat */
+		option_mask32 |= OPT_STDOUT;
+
+	return bbunpack(argv, unpack_bunzip2, make_new_name_generic, "bz2");
+}
 #endif
 
 
@@ -279,70 +344,60 @@ int gunzip_main(int argc ATTRIBUTE_UNUSED, char **argv)
  *
  * Licensed under GPL v2, see file LICENSE in this tarball for details.
  */
-
 #if ENABLE_UNLZMA
-
 static
-char* make_new_name_unlzma(char *filename)
-{
-	return make_new_name_generic(filename, "lzma");
-}
-
-static
-USE_DESKTOP(long long) int unpack_unlzma(void)
+IF_DESKTOP(long long) int FAST_FUNC unpack_unlzma(unpack_info_t *info UNUSED_PARAM)
 {
 	return unpack_lzma_stream(STDIN_FILENO, STDOUT_FILENO);
 }
-
 int unlzma_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int unlzma_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int unlzma_main(int argc UNUSED_PARAM, char **argv)
 {
-	getopt32(argv, "cf");
-	argv += optind;
-	/* lzmacat? */
-	if (applet_name[4] == 'c')
+	IF_LZMA(int opts =) getopt32(argv, "cfvdt");
+# if ENABLE_LZMA
+	/* lzma without -d or -t? */
+	if (applet_name[2] == 'm' && !(opts & (OPT_DECOMPRESS|OPT_TEST)))
+		bb_show_usage();
+# endif
+	/* lzcat? */
+	if (applet_name[2] == 'c')
 		option_mask32 |= OPT_STDOUT;
 
-	return bbunpack(argv, make_new_name_unlzma, unpack_unlzma);
+	argv += optind;
+	return bbunpack(argv, unpack_unlzma, make_new_name_generic, "lzma");
 }
-
 #endif
 
 
-/*
- *	Uncompress applet for busybox (c) 2002 Glenn McGrath
- *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
- */
-
-#if ENABLE_UNCOMPRESS
-
+#if ENABLE_UNXZ
 static
-char* make_new_name_uncompress(char *filename)
+IF_DESKTOP(long long) int FAST_FUNC unpack_unxz(unpack_info_t *info UNUSED_PARAM)
 {
-	return make_new_name_generic(filename, "Z");
-}
-
-static
-USE_DESKTOP(long long) int unpack_uncompress(void)
-{
-	USE_DESKTOP(long long) int status = -1;
-
-	if ((xread_char(STDIN_FILENO) != 0x1f) || (xread_char(STDIN_FILENO) != 0x9d)) {
+	struct {
+		uint32_t v1;
+		uint16_t v2;
+	} magic;
+	xread(STDIN_FILENO, &magic, 6);
+	if (magic.v1 != XZ_MAGIC1a || magic.v2 != XZ_MAGIC2a) {
 		bb_error_msg("invalid magic");
-	} else {
-		status = uncompress(STDIN_FILENO, STDOUT_FILENO);
+		return -1;
 	}
-	return status;
+	return unpack_xz_stream(STDIN_FILENO, STDOUT_FILENO);
 }
-
-int uncompress_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int uncompress_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int unxz_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+int unxz_main(int argc UNUSED_PARAM, char **argv)
 {
-	getopt32(argv, "cf");
+	IF_XZ(int opts =) getopt32(argv, "cfvdt");
+# if ENABLE_XZ
+	/* xz without -d or -t? */
+	if (applet_name[2] == '\0' && !(opts & (OPT_DECOMPRESS|OPT_TEST)))
+		bb_show_usage();
+# endif
+	/* xzcat? */
+	if (applet_name[2] == 'c')
+		option_mask32 |= OPT_STDOUT;
+
 	argv += optind;
-
-	return bbunpack(argv, make_new_name_uncompress, unpack_uncompress);
+	return bbunpack(argv, unpack_unxz, make_new_name_generic, "xz");
 }
-
 #endif

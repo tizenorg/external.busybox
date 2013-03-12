@@ -24,13 +24,19 @@
 // (procps 3.x and procps 2.x are forks, not newer/older versions of the same)
 
 int watch_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int watch_main(int argc ATTRIBUTE_UNUSED, char **argv)
+int watch_main(int argc UNUSED_PARAM, char **argv)
 {
 	unsigned opt;
 	unsigned period = 2;
-	int width, new_width;
+	unsigned width, new_width;
 	char *header;
 	char *cmd;
+
+#if 0 // maybe ENABLE_DESKTOP?
+	// procps3 compat - "echo TEST | watch cat" doesn't show TEST:
+	close(STDIN_FILENO);
+	xopen("/dev/null", O_RDONLY);
+#endif
 
 	opt_complementary = "-1:n+"; // at least one param; -n NUM
 	// "+": stop at first non-option (procps 3.x only)
@@ -38,33 +44,37 @@ int watch_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	argv += optind;
 
 	// watch from both procps 2.x and 3.x does concatenation. Example:
-	// watch ls -l "a /tmp" "2>&1" -- ls won't see "a /tmp" as one param
+	// watch ls -l "a /tmp" "2>&1" - ls won't see "a /tmp" as one param
 	cmd = *argv;
 	while (*++argv)
 		cmd = xasprintf("%s %s", cmd, *argv); // leaks cmd
 
-	width = -1; // make sure first time new_width != width
+	width = (unsigned)-1; // make sure first time new_width != width
 	header = NULL;
 	while (1) {
-		printf("\033[H\033[J");
+		/* home; clear to the end of screen */
+		printf("\033[H""\033[J");
 		if (!(opt & 0x2)) { // no -t
-			const int time_len = sizeof("1234-67-90 23:56:89");
+			const unsigned time_len = sizeof("1234-67-90 23:56:89");
 			time_t t;
 
-			get_terminal_width_height(STDIN_FILENO, &new_width, NULL);
+			// STDERR_FILENO is procps3 compat:
+			// "watch ls 2>/dev/null" does not detect tty size
+			get_terminal_width_height(STDERR_FILENO, &new_width, NULL);
 			if (new_width != width) {
 				width = new_width;
 				free(header);
-				header = xasprintf("Every %us: %-*s", period, width, cmd);
+				header = xasprintf("Every %us: %-*s", period, (int)width, cmd);
 			}
 			time(&t);
 			if (time_len < width)
 				strftime(header + width - time_len, time_len,
 					"%Y-%m-%d %H:%M:%S", localtime(&t));
 
-			puts(header);
+			// compat: empty line between header and cmd output
+			printf("%s\n\n", header);
 		}
-		fflush(stdout);
+		fflush_all();
 		// TODO: 'real' watch pipes cmd's output to itself
 		// and does not allow it to overflow the screen
 		// (taking into account linewrap!)

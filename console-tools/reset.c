@@ -18,7 +18,7 @@ int stty_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 #endif
 
 int reset_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int reset_main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED)
+int reset_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 {
 	static const char *const args[] = {
 		"stty", "sane", NULL
@@ -26,13 +26,13 @@ int reset_main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED)
 
 	/* no options, no getopt */
 
-	if (isatty(0) && isatty(1)) {
+	if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
 		/* See 'man 4 console_codes' for details:
-		 * "ESC c"			-- Reset
-		 * "ESC ( K"		-- Select user mapping
-		 * "ESC [ J"		-- Erase display
-		 * "ESC [ 0 m"		-- Reset all display attributes
-		 * "ESC [ ? 25 h"	-- Make cursor visible.
+		 * "ESC c"        -- Reset
+		 * "ESC ( K"      -- Select user mapping
+		 * "ESC [ J"      -- Erase to the end of screen
+		 * "ESC [ 0 m"    -- Reset all display attributes
+		 * "ESC [ ? 25 h" -- Make cursor visible
 		 */
 		printf("\033c\033(K\033[J\033[0m\033[?25h");
 		/* http://bugs.busybox.net/view.php?id=1414:

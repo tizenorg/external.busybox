@@ -1,0 +1,3 @@
+bin/busybox usr/bin/lzop
+bin/busybox usr/bin/lzopcat
+bin/busybox usr/bin/unlzop
