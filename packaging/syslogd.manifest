@@ -1,8 +1,11 @@
 <manifest>
+	<define>
+		<domain name="syslogd"/>
+	</define>
         <request>
                 <domain name="_"/>
         </request>
         <assign>
-                <filesystem path="/bin/*" exec_label="none" />
+		<filesystem path="/sbin/syslogd" exec_label="syslogd" />
         </assign>
 </manifest>

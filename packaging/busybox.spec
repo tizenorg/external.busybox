@@ -2,7 +2,7 @@
 Summary: Single binary providing simplified versions of system commands
 Name: busybox
 Version: 1.17.1
-Release: 23
+Release: 28
 License: GPLv2
 Group: System/Shells
 Source: http://www.busybox.net/downloads/%{name}-%{version}.tar.gz
@@ -11,7 +11,9 @@ Source2: bin.links
 Source3: sbin.links
 Source4: usrbin.links
 Source5: usrsbin.links
+Source101: tizen.config
 Source1001: %{name}.manifest
+Source1002: syslogd.manifest
 
 Patch0: 06ls.patch
 Patch1: doc-man-name.patch
@@ -59,7 +61,11 @@ Patch34: smack-busybox-1.17.1.patch
 Patch35: smack-conflict-with-selinux.patch
 Patch36: make_unicode_printable.patch
 
+# The following patches have been merged upstream and will be in version 1.20
+Patch37: busybox-1.20.2-fix-resource-h-failure.patch
+
 Patch100: busybox-1.17.1-make.patch
+Patch101: sysinfo-multiple-define-error-fix.patch
 
 Patch999: syslogd-disable-systemd-sa.patch
 
@@ -592,15 +598,19 @@ BusyBox symlinks for utilities corresponding to 'zcip' package.
 %patch32 -p1
 %patch33 -p1
 %patch36 -p1
+%patch37 -p1
 
 %patch100 -p1
+%patch101 -p1
 
 %patch999 -p1
 
 %build
 cp %{SOURCE1001} .
+cp %{SOURCE1002} .
 # create dynamic busybox - the executable is busybox
-make defconfig
+cp %{SOURCE101} .config
+make oldconfig
 make CC="gcc $RPM_OPT_FLAGS"
 cp busybox busybox-dynamic
 
@@ -621,6 +631,9 @@ for f in `cat %SOURCE4` ; do ln -s ../../bin/busybox $f ; done
 cd ../../usr/sbin
 for f in `cat %SOURCE5` ; do ln -s ../../bin/busybox $f ; done
 popd
+
+rm -rf $RPM_BUILD_ROOT/sbin/syslogd
+cp -f $RPM_BUILD_ROOT/bin/busybox $RPM_BUILD_ROOT/sbin/syslogd
 
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/license
 for keyword in LICENSE COPYING COPYRIGHT;
@@ -760,7 +773,7 @@ done
 %exclude /usr/bin/wc
 %exclude /usr/bin/who
 %exclude /usr/bin/whoami
-%exclude /usr/bin/vi
+/usr/bin/vi
 %exclude /usr/bin/xargs
 %exclude /usr/bin/yes
 %exclude /usr/sbin/chroot
@@ -807,7 +820,7 @@ done
 %exclude /usr/bin/ftpput
 %exclude /usr/sbin/httpd
 %exclude /sbin/ifenslave
-/sbin/inotifyd
+%exclude /sbin/inotifyd
 %exclude /bin/ipaddr
 %exclude /bin/iplink
 %exclude /bin/iproute
@@ -822,7 +835,7 @@ done
 %exclude /usr/bin/nmeter
 %exclude /usr/bin/pscan
 %exclude /sbin/raidautorun
-/usr/bin/readahead
+%exclude /usr/bin/readahead
 %exclude /sbin/setconsole
 %exclude /usr/sbin/tftpd
 %exclude /usr/bin/ttysize
@@ -861,7 +874,7 @@ done
 
 %files symlinks-dnsutils
 %manifest %{name}.manifest
-/usr/bin/nslookup
+%exclude /usr/bin/nslookup
 
 %files symlinks-dosfstools
 %exclude /sbin/mkdosfs
@@ -884,8 +897,8 @@ done
 
 %files symlinks-ifupdown
 %manifest %{name}.manifest
-/sbin/ifdown
-/sbin/ifup
+%exclude /sbin/ifdown
+%exclude /sbin/ifup
 
 %files symlinks-initscripts
 %exclude /bin/mountpoint
@@ -955,8 +968,7 @@ done
 %exclude /sbin/slattach
 
 %files symlinks-openbsd-inetd
-%manifest %{name}.manifest
-/usr/sbin/inetd
+%exclude /usr/sbin/inetd
 
 %files symlinks-passwd
 %exclude /usr/sbin/chpasswd
@@ -1008,12 +1020,11 @@ done
 %exclude /usr/sbin/sendmail
 
 %files symlinks-sysklogd
-%manifest %{name}.manifest
+%manifest syslogd.manifest
 /sbin/syslogd
 
 %files symlinks-telnetd
-%manifest %{name}.manifest
-/usr/sbin/telnetd
+%exclude /usr/sbin/telnetd
 
 %files symlinks-tftp
 %exclude /usr/bin/tftp
