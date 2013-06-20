@@ -14,6 +14,8 @@ Source5: usrsbin.links
 Source101: tizen.config
 Source1001: %{name}.manifest
 Source1002: syslogd.manifest
+Source1003: packing/syslog.service
+Source1004: packing/klog.service
 
 Patch0: 06ls.patch
 Patch1: doc-man-name.patch
@@ -619,6 +621,13 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/bin
 install -m 755 busybox-dynamic $RPM_BUILD_ROOT/bin/busybox
 
+#systemd service file setup
+mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
+install -m 0644 %{SOURCE1003} %{buildroot}%{_libdir}/systemd/system/
+install -m 0644 %{SOURCE1004} %{buildroot}%{_libdir}/systemd/system/
+ln -s ../syslog.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/syslog.service
+ln -s ../klog.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/klog.service
+
 # debian/busybox.links
 pushd %{buildroot}
 mkdir -p usr/bin usr/sbin sbin
@@ -779,6 +788,12 @@ done
 %exclude /usr/sbin/chroot
 %exclude /usr/sbin/rdev
 %exclude /usr/sbin/readprofile
+
+%defattr(644,root,root)
+/usr/lib/systemd/system/syslog.service
+/usr/lib/systemd/system/klog.service
+/usr/lib/systemd/system/multi-user.target.wants/syslog.service
+/usr/lib/systemd/system/multi-user.target.wants/klog.service
 
 %files docs
 %doc LICENSE docs/busybox.net/*.html

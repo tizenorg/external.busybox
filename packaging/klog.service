@@ -1,0 +1,10 @@
+[Unit]
+Description=System Kernel Logging Service
+After=syslog.service
+
+[Service]
+Type=forking
+ExecStart=/sbin/klogd
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=System Logging Service
+
+[Service]
+Type=forking
+ExecStart=/sbin/syslogd
+
+[Install]
+WantedBy=multi-user.target
