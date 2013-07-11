@@ -685,7 +685,7 @@ done
 %exclude /bin/mkdir
 %exclude /bin/mknod
 %exclude /bin/more
-/bin/mount
+%exclude /bin/mount
 %exclude /bin/mv
 %exclude /bin/pwd
 %exclude /bin/readlink
