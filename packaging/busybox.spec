@@ -654,6 +654,10 @@ do
 	done;
 done
 
+#License flie
+mkdir -p %{buildroot}/usr/share/license
+cp LICENSE %{buildroot}/usr/share/license/%{name} 
+
 %files
 %defattr(-,root,root,-)
 %manifest %{name}.manifest
@@ -794,6 +798,10 @@ done
 /usr/lib/systemd/system/klog.service
 /usr/lib/systemd/system/multi-user.target.wants/syslog.service
 /usr/lib/systemd/system/multi-user.target.wants/klog.service
+
+#License
+/usr/share/license/%{name}
+
 
 %files docs
 %doc LICENSE docs/busybox.net/*.html
