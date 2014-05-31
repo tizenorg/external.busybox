@@ -1,0 +1,2 @@
+bin/busybox usr/bin/rpm
+bin/busybox usr/bin/rpm2cpio
