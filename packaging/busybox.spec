@@ -55,7 +55,7 @@ Patch30: swaponoff-FreeBSD-support.patch
 
 # not sent upstream
 Patch31: init-console-CRTSCTS.patch
-Patch32: debian-changes-1-1.17.1-10
+Patch32: debian-changes-1.17.1-10
 
 # SLP
 Patch33: udhcpc-fast-request.patch
