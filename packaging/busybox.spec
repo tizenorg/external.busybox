@@ -2,7 +2,7 @@
 Summary: Single binary providing simplified versions of system commands
 Name: busybox
 Version: 1.17.1
-Release: 10
+Release: 28
 License: GPLv2
 Group: System/Shells
 Source: http://www.busybox.net/downloads/%{name}-%{version}.tar.gz
@@ -11,6 +11,11 @@ Source2: bin.links
 Source3: sbin.links
 Source4: usrbin.links
 Source5: usrsbin.links
+Source101: tizen.config
+Source201: klogd.service
+Source202: syslogd.service
+Source1001: %{name}.manifest
+Source1002: syslogd.manifest
 
 Patch0: 06ls.patch
 Patch1: doc-man-name.patch
@@ -50,7 +55,7 @@ Patch30: swaponoff-FreeBSD-support.patch
 
 # not sent upstream
 Patch31: init-console-CRTSCTS.patch
-Patch32: debian-changes-1:1.17.1-10
+Patch32: debian-changes-1.17.1-10
 
 # SLP
 Patch33: udhcpc-fast-request.patch
@@ -58,14 +63,19 @@ Patch34: smack-busybox-1.17.1.patch
 Patch35: smack-conflict-with-selinux.patch
 Patch36: make_unicode_printable.patch
 
+# The following patches have been merged upstream and will be in version 1.20
+Patch37: busybox-1.20.2-fix-resource-h-failure.patch
+
 Patch100: busybox-1.17.1-make.patch
+Patch101: sysinfo-multiple-define-error-fix.patch
+
+Patch999: syslogd-disable-systemd-sa.patch
 
 URL: http://www.busybox.net
 
 BuildRequires: pkgconfig(libsystemd-daemon)
 
-
-%description 
+%description
 Busybox is a single binary which includes versions of a large number
 of system commands, including a shell.  This package can be very
 useful for recovering from certain types of system failures,
@@ -589,12 +599,19 @@ BusyBox symlinks for utilities corresponding to 'zcip' package.
 %patch32 -p1
 %patch33 -p1
 %patch36 -p1
+%patch37 -p1
 
 %patch100 -p1
+%patch101 -p1
+
+%patch999 -p1
 
 %build
+cp %{SOURCE1001} .
+cp %{SOURCE1002} .
 # create dynamic busybox - the executable is busybox
-make defconfig
+cp %{SOURCE101} .config
+make oldconfig
 make CC="gcc $RPM_OPT_FLAGS"
 cp busybox busybox-dynamic
 
@@ -616,9 +633,32 @@ cd ../../usr/sbin
 for f in `cat %SOURCE5` ; do ln -s ../../bin/busybox $f ; done
 popd
 
+# install systemd service files for syslogd and klogd
+mkdir -p %{buildroot}%{_libdir}/systemd/system
+mkdir -p %{buildroot}%{_libdir}/systemd/system/basic.target.wants
+install -m 644 %SOURCE201 %{buildroot}%{_libdir}/systemd/system/klogd.service
+ln -s ../klogd.service %{buildroot}%{_libdir}/systemd/system/basic.target.wants/klogd.service
+install -m 644 %SOURCE202 %{buildroot}%{_libdir}/systemd/system/syslogd.service
+ln -s ../syslogd.service %{buildroot}%{_libdir}/systemd/system/basic.target.wants/syslogd.service
+
+rm -rf $RPM_BUILD_ROOT/sbin/syslogd
+cp -f $RPM_BUILD_ROOT/bin/busybox $RPM_BUILD_ROOT/sbin/syslogd
+
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/license
+for keyword in LICENSE COPYING COPYRIGHT;
+do
+	for file in `find %{_builddir} -name $keyword`;
+	do
+		cat $file >> $RPM_BUILD_ROOT%{_datadir}/license/%{name};
+		echo "";
+	done;
+done
+
 %files
 %defattr(-,root,root,-)
-%doc LICENSE 
+%manifest %{name}.manifest
+%doc LICENSE
+%{_datadir}/license/%{name}
 %exclude /bin/mktemp
 /bin/busybox
 %exclude /bin/ash
@@ -630,36 +670,36 @@ popd
 %exclude /bin/date
 %exclude /bin/dd
 %exclude /bin/df
-/bin/dmesg
+%exclude /bin/dmesg
 %exclude /bin/dnsdomainname
 %exclude /bin/echo
-/bin/egrep
+%exclude /bin/egrep
 %exclude /bin/false
 %exclude /bin/fgrep
-/bin/grep
-/bin/gunzip
-/bin/gzip
-/bin/hostname
+%exclude /bin/grep
+%exclude /bin/gunzip
+%exclude /bin/gzip
+%exclude /bin/hostname
 %exclude /bin/ln
 %exclude /bin/ls
 %exclude /bin/mkdir
 %exclude /bin/mknod
-/bin/more
-/bin/mount
+%exclude /bin/more
+%exclude /bin/mount
 %exclude /bin/mv
 %exclude /bin/pwd
 %exclude /bin/readlink
 %exclude /bin/rm
 %exclude /bin/rmdir
-/bin/sed
+%exclude /bin/sed
 #/bin/sh
 %exclude /bin/sleep
 %exclude /bin/stty
 %exclude /bin/sync
-/bin/tar
+%exclude /bin/tar
 %exclude /bin/touch
 %exclude /bin/true
-/bin/umount
+%exclude /bin/umount
 %exclude /bin/uname
 %exclude /bin/uncompress
 %exclude /bin/zcat
@@ -667,7 +707,7 @@ popd
 %exclude /sbin/blockdev
 %exclude /sbin/fdisk
 %exclude /sbin/fsck.minix
-/sbin/getty
+%exclude /sbin/getty
 %exclude /sbin/hwclock
 %exclude /sbin/losetup
 %exclude /sbin/mkfs.minix
@@ -683,7 +723,7 @@ popd
 %exclude /usr/bin/cmp
 %exclude /usr/bin/comm
 %exclude /usr/bin/cut
-/usr/bin/diff
+%exclude /usr/bin/diff
 %exclude /usr/bin/dirname
 %exclude /usr/bin/du
 %exclude /usr/bin/env
@@ -701,7 +741,7 @@ popd
 %exclude /usr/bin/ionice
 %exclude /usr/bin/ipcrm
 %exclude /usr/bin/ipcs
-/usr/bin/less
+%exclude /usr/bin/less
 %exclude /usr/bin/linux32
 %exclude /usr/bin/linux64
 %exclude /usr/bin/logger
@@ -769,11 +809,12 @@ popd
 %exclude /usr/bin/brctl
 
 %files symlinks-bsdmainutils
-/usr/bin/cal
+%exclude /usr/bin/cal
 %exclude /usr/bin/hd
-/usr/bin/hexdump
+%exclude /usr/bin/hexdump
 
 %files symlinks-busybox
+%manifest %{name}.manifest
 %exclude /usr/bin/[[
 %exclude /usr/bin/catv
 %exclude /usr/sbin/crond
@@ -783,12 +824,12 @@ popd
 %exclude /usr/bin/ether-wake
 %exclude /usr/sbin/fakeidentd
 %exclude /sbin/fbsplash
-/bin/fsync
+%exclude /bin/fsync
 %exclude /usr/bin/ftpget
 %exclude /usr/bin/ftpput
 %exclude /usr/sbin/httpd
 %exclude /sbin/ifenslave
-/sbin/inotifyd
+%exclude /sbin/inotifyd
 %exclude /bin/ipaddr
 %exclude /bin/iplink
 %exclude /bin/iproute
@@ -803,12 +844,12 @@ popd
 %exclude /usr/bin/nmeter
 %exclude /usr/bin/pscan
 %exclude /sbin/raidautorun
-/usr/bin/readahead
+%exclude /usr/bin/readahead
 %exclude /sbin/setconsole
 %exclude /usr/sbin/tftpd
 %exclude /usr/bin/ttysize
-/bin/usleep
-/usr/bin/volname
+%exclude /bin/usleep
+%exclude /usr/bin/volname
 
 %files symlinks-bzip2
 %exclude /bin/bunzip2
@@ -816,7 +857,7 @@ popd
 %exclude /bin/bzip2
 
 %files symlinks-console-tools
-/usr/bin/chvt
+%exclude /usr/bin/chvt
 %exclude /usr/bin/deallocvt
 %exclude /bin/fgconsole
 %exclude /usr/bin/kbd_mode
@@ -826,7 +867,7 @@ popd
 %exclude /usr/bin/showkey
 
 %files symlinks-cpio
-/bin/cpio
+%exclude /bin/cpio
 
 %files symlinks-cron
 %exclude /usr/bin/crontab
@@ -841,11 +882,12 @@ popd
 %exclude /usr/bin/dc
 
 %files symlinks-dnsutils
-/usr/bin/nslookup
+%manifest %{name}.manifest
+%exclude /usr/bin/nslookup
 
 %files symlinks-dosfstools
 %exclude /sbin/mkdosfs
-/sbin/mkfs.vfat
+%exclude /sbin/mkfs.vfat
 
 %files symlinks-ed
 %exclude /bin/ed
@@ -863,8 +905,9 @@ popd
 %exclude /sbin/hdparm
 
 %files symlinks-ifupdown
-/sbin/ifdown
-/sbin/ifup
+%manifest %{name}.manifest
+%exclude /sbin/ifdown
+%exclude /sbin/ifup
 
 %files symlinks-initscripts
 %exclude /bin/mountpoint
@@ -884,11 +927,15 @@ popd
 %exclude /usr/bin/arping
 
 %files symlinks-iputils-ping
-/bin/ping
-/bin/ping6
+%manifest %{name}.manifest
+%exclude /bin/ping
+%exclude /bin/ping6
 
 %files symlinks-klogd
-/sbin/klogd
+%manifest %{name}.manifest
+%exclude /sbin/klogd
+%exclude %{_libdir}/systemd/system/klogd.service
+%exclude %{_libdir}/systemd/system/basic.target.wants/klogd.service
 
 %files symlinks-loadlin
 %exclude /usr/bin/freeramdisk
@@ -923,20 +970,20 @@ popd
 %exclude /usr/sbin/ubidetach
 
 %files symlinks-net-tools
-/usr/sbin/arp
-/sbin/ifconfig
+%exclude /usr/sbin/arp
+%exclude /sbin/ifconfig
 %exclude /sbin/iptunnel
 %exclude /sbin/nameif
-/bin/netstat
-/sbin/route
+%exclude /bin/netstat
+%exclude /sbin/route
 %exclude /sbin/slattach
 
 %files symlinks-openbsd-inetd
-/usr/sbin/inetd
+%exclude /usr/sbin/inetd
 
 %files symlinks-passwd
-/usr/sbin/chpasswd
-/usr/bin/passwd
+%exclude /usr/sbin/chpasswd
+%exclude /usr/bin/passwd
 
 %files symlinks-patch
 %exclude /usr/bin/patch
@@ -977,17 +1024,19 @@ popd
 %exclude /usr/bin/svlogd
 
 %files symlinks-sharutils
-/usr/bin/uudecode
-/usr/bin/uuencode
+%exclude /usr/bin/uudecode
+%exclude /usr/bin/uuencode
 
 %files symlinks-ssmtp
 %exclude /usr/sbin/sendmail
 
 %files symlinks-sysklogd
-/sbin/syslogd
+%exclude /sbin/syslogd
+%exclude %{_libdir}/systemd/system/syslogd.service
+%exclude %{_libdir}/systemd/system/basic.target.wants/syslogd.service
 
 %files symlinks-telnetd
-/usr/sbin/telnetd
+%exclude /usr/sbin/telnetd
 
 %files symlinks-tftp
 %exclude /usr/bin/tftp
@@ -996,21 +1045,21 @@ popd
 %exclude /usr/bin/time
 
 %files symlinks-tofrodos
-/usr/bin/dos2unix
+%exclude /usr/bin/dos2unix
 %exclude /usr/bin/unix2dos
 
 %files symlinks-udhcpc
-/usr/bin/udhcpc
+%exclude /usr/bin/udhcpc
 
 %files symlinks-udhcpd
-/usr/bin/dumpleases
-/usr/sbin/udhcpd
+%exclude /usr/bin/dumpleases
+%exclude /usr/sbin/udhcpd
 
 %files symlinks-unzip
-/usr/bin/unzip
+%exclude /usr/bin/unzip
 
 %files symlinks-vlan
-/sbin/vconfig
+%exclude /sbin/vconfig
 
 %files symlinks-vlock
 %exclude /usr/bin/vlock
@@ -1026,4 +1075,3 @@ popd
 
 %files symlinks-zcip
 %exclude /usr/bin/zcip
-
