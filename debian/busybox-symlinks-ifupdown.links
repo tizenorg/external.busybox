@@ -1,2 +1,0 @@
-bin/busybox sbin/ifdown
-bin/busybox sbin/ifup

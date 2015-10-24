@@ -26,16 +26,37 @@
  * Port to busybox: KaiGai Kohei <kaigai@kaigai.gr.jp>
  *                  - based on coreutils-5.97 (in Fedora Core 6)
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-#include <getopt.h>
+
+//usage:#define runcon_trivial_usage
+//usage:       "[-c] [-u USER] [-r ROLE] [-t TYPE] [-l RANGE] PROG ARGS\n"
+//usage:       "runcon CONTEXT PROG ARGS"
+//usage:#define runcon_full_usage "\n\n"
+//usage:       "Run PROG in a different security context\n"
+//usage:     "\n	CONTEXT		Complete security context\n"
+//usage:	IF_FEATURE_RUNCON_LONG_OPTIONS(
+//usage:     "\n	-c,--compute	Compute process transition context before modifying"
+//usage:     "\n	-t,--type=TYPE	Type (for same role as parent)"
+//usage:     "\n	-u,--user=USER	User identity"
+//usage:     "\n	-r,--role=ROLE	Role"
+//usage:     "\n	-l,--range=RNG	Levelrange"
+//usage:	)
+//usage:	IF_NOT_FEATURE_RUNCON_LONG_OPTIONS(
+//usage:     "\n	-c	Compute process transition context before modifying"
+//usage:     "\n	-t TYPE	Type (for same role as parent)"
+//usage:     "\n	-u USER	User identity"
+//usage:     "\n	-r ROLE	Role"
+//usage:     "\n	-l RNG	Levelrange"
+//usage:	)
+
 #include <selinux/context.h>
 #include <selinux/flask.h>
 
 #include "libbb.h"
 
 static context_t runcon_compute_new_context(char *user, char *role, char *type, char *range,
-					    char *command, int compute_trans)
+			char *command, int compute_trans)
 {
 	context_t con;
 	security_context_t cur_context;
@@ -48,9 +69,9 @@ static context_t runcon_compute_new_context(char *user, char *role, char *type, 
 
 		if (getfilecon(command, &file_context) < 0)
 			bb_error_msg_and_die("can't retrieve attributes of '%s'",
-					     command);
+					command);
 		if (security_compute_create(cur_context, file_context,
-					    SECCLASS_PROCESS, &new_context))
+					SECCLASS_PROCESS, &new_context))
 			bb_error_msg_and_die("unable to compute a new context");
 		cur_context = new_context;
 	}
@@ -126,12 +147,11 @@ int runcon_main(int argc UNUSED_PARAM, char **argv)
 
 	if (security_check_context(context_str(con)))
 		bb_error_msg_and_die("'%s' is not a valid context",
-				     context_str(con));
+				context_str(con));
 
 	if (setexeccon(context_str(con)))
 		bb_error_msg_and_die("can't set up security context '%s'",
-				     context_str(con));
+				context_str(con));
 
-	execvp(argv[0], argv);
-	bb_perror_msg_and_die("can't execute '%s'", argv[0]);
+	BB_EXECVP_or_die(argv);
 }

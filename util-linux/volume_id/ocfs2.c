@@ -18,6 +18,17 @@
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//kbuild:lib-$(CONFIG_FEATURE_VOLUMEID_OCFS2) += ocfs2.o
+
+//config:
+//config:config FEATURE_VOLUMEID_OCFS2
+//config:	bool "ocfs2 filesystem"
+//config:	default y
+//config:	depends on VOLUMEID
+//config:	help
+//config:	  TODO
+//config:
+
 #include "volume_id_internal.h"
 
 /* All these values are taken from ocfs2-tools's ocfs2_fs.h */
@@ -101,6 +112,6 @@ int FAST_FUNC volume_id_probe_ocfs2(struct volume_id *id /*,uint64_t off*/)
 	volume_id_set_label_string(id, os->s_label, OCFS2_MAX_VOL_LABEL_LEN < VOLUME_ID_LABEL_SIZE ?
 					OCFS2_MAX_VOL_LABEL_LEN : VOLUME_ID_LABEL_SIZE);
 	volume_id_set_uuid(id, os->s_uuid, UUID_DCE);
-//	id->type = "ocfs2";
+	IF_FEATURE_BLKID_TYPE(id->type = "ocfs2";)
 	return 0;
 }

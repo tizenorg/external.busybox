@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2007 by Denys Vlasenko <vda.linux@googlemail.com>
-# Licensed under GPL v2, see file LICENSE for details.
+# Licensed under GPLv2, see file LICENSE in this source tree.
 
 . ./testing.sh
 
@@ -16,19 +16,84 @@ testing "awk -F case 5" "awk -F '[#]' '{ print NF }'" "4\n" "" "#abc##zz\n"
 testing "awk -F case 6" "awk -F '[#]' '{ print NF }'" "4\n" "" "z#abc##zz\n"
 testing "awk -F case 7" "awk -F '[#]' '{ print NF }'" "5\n" "" "z##abc##zz\n"
 
+# conditions and operators
+testing "awk if operator == "  "awk 'BEGIN{if(23==23) print \"foo\"}'" "foo\n" "" ""
+testing "awk if operator != "  "awk 'BEGIN{if(23!=23) print \"bar\"}'" ""      "" ""
+testing "awk if operator >= "  "awk 'BEGIN{if(23>=23) print \"foo\"}'" "foo\n" "" ""
+testing "awk if operator < "   "awk 'BEGIN{if(2 < 13) print \"foo\"}'" "foo\n" "" ""
+testing "awk if string == "    "awk 'BEGIN{if(\"a\"==\"ab\") print \"bar\"}'" "" "" ""
+
 # 4294967295 = 0xffffffff
-testing "awk bitwise op"  "awk '{ print or(4294967295,1) }'" "4.29497e+09\n" "" "\n"
+testing "awk bitwise op"  "awk '{ print or(4294967295,1) }'" "4294967295\n" "" "\n"
+
+# we were testing for a non-empty body when deciding if a function was
+# defined or not. The testcase below caused:
+# awk: cmd. line:8: Call to undefined function
+prg='
+function empty_fun(count) {
+  # empty
+}
+END {
+  i=1
+  print "L" i "\n"
+  empty_fun(i + i + ++i)
+  print "L" i "\n"
+}'
+testing "awk handles empty function f(arg){}" \
+	"awk '$prg'" \
+	"L1\n\nL2\n\n" \
+	"" ""
+
+prg='
+function outer_fun() {
+  return 1
+}
+END {
+  i=1
+  print "L" i "\n"
+  i += outer_fun()
+  print "L" i "\n"
+}'
+testing "awk properly handles function from other scope" \
+	"awk '$prg'" \
+	"L1\n\nL2\n\n" \
+	"" ""
+
+prg='
+END {
+  i=1
+  print "L" i "\n"
+  i + trigger_error_fun()
+  print "L" i "\n"
+}'
+testing "awk properly handles undefined function" \
+	"awk '$prg' 2>&1" \
+	"L1\n\nawk: cmd. line:5: Call to undefined function\n" \
+	"" ""
+
+
 optional DESKTOP
-testing "awk hex const 1" "awk '{ print or(0xffffffff,1) }'" "4.29497e+09\n" "" "\n"
-testing "awk hex const 2" "awk '{ print or(0x80000000,1) }'" "2.14748e+09\n" "" "\n"
+testing "awk hex const 1" "awk '{ print or(0xffffffff,1) }'" "4294967295\n" "" "\n"
+testing "awk hex const 2" "awk '{ print or(0x80000000,1) }'" "2147483649\n" "" "\n"
 testing "awk oct const"   "awk '{ print or(01234,1) }'"      "669\n"         "" "\n"
 SKIP=
+
+# check that "hex/oct integer" heuristic doesn't kick in on 00NN.NNN
+testing "awk floating const with leading zeroes" \
+	"awk '{ printf \"%f %f\n\", \"000.123\", \"009.123\" }'" \
+	"0.123000 9.123000\n" \
+	"" "\n"
 
 # long field seps requiring regex
 testing "awk long field sep" "awk -F-- '{ print NF, length(\$NF), \$NF }'" \
 	"2 0 \n3 0 \n4 0 \n5 0 \n" \
 	"" \
 	"a--\na--b--\na--b--c--\na--b--c--d--"
+
+testing "awk -F handles escapes" "awk -F'\\x21' '{print \$1}'" \
+	"a\n" \
+	"" \
+	"a!b\n"
 
 # '@(samp|code|file)\{' is an invalid extended regex (unmatched '{'),
 # but gawk 3.1.5 does not bail out on it.
@@ -70,6 +135,12 @@ testing "awk string cast (bug 725)" \
 
 testing "awk handles whitespace before array subscript" \
 	"awk 'BEGIN { arr [3] = 1; print arr [3] }'" "1\n" "" ""
+
+# GNU awk 3.1.5's "print ERRNO" prints "No such file or directory" instead of "2",
+# do we need to emulate that as well?
+testing "awk handles non-existing file correctly" \
+	"awk 'BEGIN { getline line <\"doesnt_exist\"; print ERRNO; ERRNO=0; close(\"doesnt_exist\"); print ERRNO; print \"Ok\" }'" \
+	"2\n0\nOk\n" "" ""
 
 prg='
 BEGIN {
@@ -189,5 +260,41 @@ outer2 d
 end d
 " \
 	"" ""
+
+testing "awk handles empty ()" \
+	"awk 'BEGIN {print()}' 2>&1" "awk: cmd. line:1: Empty sequence\n" "" ""
+
+testing "awk FS assignment" "awk '{FS=\":\"; print \$1}'" \
+	"a:b\ne\n" \
+	"" \
+	"a:b c:d\ne:f g:h"
+
+optional FEATURE_AWK_LIBM
+testing "awk large integer" \
+	"awk 'BEGIN{n=(2^31)-1; print n, int(n), n%1, ++n, int(n), n%1}'" \
+	"2147483647 2147483647 0 2147483648 2147483648 0\n" \
+	"" ""
+SKIP=
+
+testing "awk length(array)" \
+	"awk 'BEGIN{ A[1]=2; A[\"qwe\"]=\"asd\"; print length(A)}'" \
+	"2\n" \
+	"" ""
+
+testing "awk -f and ARGC" \
+	"awk -f - input" \
+	"re\n2\n" \
+	"do re mi\n" \
+	'{print $2; print ARGC;}' \
+
+optional FEATURE_AWK_GNU_EXTENSIONS
+testing "awk -e and ARGC" \
+	"awk -e '{print \$2; print ARGC;}' input" \
+	"re\n2\n" \
+	"do re mi\n" \
+	""
+SKIP=
+
+# testing "description" "command" "result" "infile" "stdin"
 
 exit $FAILCOUNT

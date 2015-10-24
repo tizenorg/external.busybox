@@ -9,7 +9,7 @@
  * Sat Mar 20 EST 1999 Arnaldo Carvalho de Melo <acme@conectiva.com.br>
  *      Internationalization
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #if ENABLE_FEATURE_SUN_LABEL
@@ -348,6 +348,7 @@ create_sunlabel(void)
 
 	set_all_unchanged();
 	set_changed(0);
+	check_sun_label();
 	get_boot(CREATE_EMPTY_SUN);
 }
 
@@ -497,11 +498,14 @@ add_sun_partition(int n, int sys)
 		else
 			first = read_int(scround(start), scround(stop)+1,
 					 scround(stop), 0, mesg);
-		if (display_in_cyl_units)
+		if (display_in_cyl_units) {
 			first *= units_per_sector;
-		else
+		} else {
 			/* Starting sector has to be properly aligned */
-			first = (first + g_heads * g_sectors - 1) / (g_heads * g_sectors);
+			first = (first + g_heads * g_sectors - 1) /
+				(g_heads * g_sectors);
+			first *= g_heads * g_sectors;
+		}
 		if (n == 2 && first != 0)
 			printf("\
 It is highly recommended that the third partition covers the whole disk\n\
@@ -654,7 +658,7 @@ sun_list_table(int xtra)
 			uint32_t start = SUN_SSWAP32(sunlabel->partitions[i].start_cylinder) * g_heads * g_sectors;
 			uint32_t len = SUN_SSWAP32(sunlabel->partitions[i].num_sectors);
 			printf("%s %c%c %9lu %9lu %9lu%c  %2x  %s\n",
-				partname(disk_device, i+1, w),			/* device */
+				partname(disk_device, i+1, w),                  /* device */
 				(sunlabel->infos[i].flags & 0x01) ? 'u' : ' ',  /* flags */
 				(sunlabel->infos[i].flags & 0x10) ? 'r' : ' ',
 				(long) scround(start),                          /* start */

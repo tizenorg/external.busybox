@@ -1,13 +1,13 @@
 #!/bin/sh
 
 # Copyright 2005 by Rob Landley <rob@landley.net>
-# Licensed under GPL v2, see file LICENSE for details.
+# Licensed under GPLv2, see file LICENSE in this source tree.
 
 # AUDIT:
 
 . ./testing.sh
 
-# testing "test name" "options" "expected result" "file input" "stdin"
+# testing "test name" "commands" "expected result" "file input" "stdin"
 #   file input will be file called "input"
 #   test can create a file "actual" instead of writing to stdout
 
@@ -82,6 +82,20 @@ testing "grep -F handles -i" "grep -F -i foo input ; echo \$?" \
 testing "grep can read regexps from stdin" "grep -f - input ; echo \$?" \
 	"two\nthree\n0\n" "tw\ntwo\nthree\n" "tw.\nthr\n"
 
+# -x (whole line match)
+testing "grep -x (full match)" "grep -x foo input ; echo \$?" \
+	"foo\n0\n" "foo\n" ""
+testing "grep -x (partial match 1)" "grep -x foo input ; echo \$?" \
+	"1\n" "foo bar\n" ""
+testing "grep -x (partial match 2)" "grep -x foo input ; echo \$?" \
+	"1\n" "bar foo\n" ""
+testing "grep -x -F (full match)" "grep -x -F foo input ; echo \$?" \
+	"foo\n0\n" "foo\n" ""
+testing "grep -x -F (partial match 1)" "grep -x -F foo input ; echo \$?" \
+	"1\n" "foo bar\n" ""
+testing "grep -x -F (partial match 2)" "grep -x -F foo input ; echo \$?" \
+	"1\n" "bar foo\n" ""
+
 optional FEATURE_GREP_EGREP_ALIAS
 testing "grep -E supports extended regexps" "grep -E fo+" "foo\n" "" \
 	"b\ar\nfoo\nbaz"
@@ -98,5 +112,55 @@ testing "grep -o does not loop forever" \
 	'grep -o "[^/]*$"' \
 	"test\n" \
 	"" "/var/test\n"
+testing "grep -o does not loop forever on zero-length match" \
+	'grep -o "" | head -n1' \
+	"" \
+	"" "test\n"
+
+testing "grep -f EMPTY_FILE" \
+	"grep -f input" \
+	"" \
+	"" \
+	"test\n"
+
+testing "grep -v -f EMPTY_FILE" \
+	"grep -v -f input" \
+	"test\n" \
+	"" \
+	"test\n"
+
+testing "grep -Fw matches only words" \
+	"grep -Fw foo input" \
+	"" \
+	"foop\n" \
+	""
+
+testing "grep -Fw doesn't stop on 1st mismatch" \
+	"grep -Fw foo input" \
+	"foop foo\n" \
+	"foop foo\n" \
+	""
+
+testing "grep -w doesn't stop on 1st mismatch" \
+	"grep -w foo input" \
+	"foop foo\n" \
+	"foop foo\n" \
+	""
+
+testing "grep -w ^str doesn't match str not at the beginning" \
+	"grep -w ^str input" \
+	"" \
+	"strstr\n" \
+	""
+
+testing "grep -w ^ doesn't hang" \
+	"grep -w ^ input" \
+	"" \
+	"anything\n" \
+	""
+
+# testing "test name" "commands" "expected result" "file input" "stdin"
+#   file input will be file called "input"
+#   test can create a file "actual" instead of writing to stdout
 
 exit $FAILCOUNT

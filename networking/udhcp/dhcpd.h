@@ -1,6 +1,6 @@
 /* vi: set sw=4 ts=4: */
 /*
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #ifndef UDHCP_DHCPD_H
 #define UDHCP_DHCPD_H 1
@@ -61,9 +61,11 @@ struct server_config_t {
 /* client_config sits in 2nd half of bb_common_bufsiz1 */
 
 #if ENABLE_FEATURE_UDHCP_PORT
-#define SERVER_PORT (server_config.port)
+#define SERVER_PORT  (server_config.port)
+#define SERVER_PORT6 (server_config.port)
 #else
-#define SERVER_PORT 67
+#define SERVER_PORT  67
+#define SERVER_PORT6 547
 #endif
 
 

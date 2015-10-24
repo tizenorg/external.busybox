@@ -7,20 +7,43 @@
  * Loosely based on original busybox unzip applet by Laurence Anderson.
  * All options and features should work in this version.
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 /* For reference see
  * http://www.pkware.com/company/standards/appnote/
  * http://www.info-zip.org/pub/infozip/doc/appnote-iz-latest.zip
- */
-
-/* TODO
+ *
+ * TODO
  * Zip64 + other methods
  */
 
+//config:config UNZIP
+//config:	bool "unzip"
+//config:	default y
+//config:	help
+//config:	  unzip will list or extract files from a ZIP archive,
+//config:	  commonly found on DOS/WIN systems. The default behavior
+//config:	  (with no options) is to extract the archive into the
+//config:	  current directory. Use the `-d' option to extract to a
+//config:	  directory of your choice.
+
+//applet:IF_UNZIP(APPLET(unzip, BB_DIR_USR_BIN, BB_SUID_DROP))
+//kbuild:lib-$(CONFIG_UNZIP) += unzip.o
+
+//usage:#define unzip_trivial_usage
+//usage:       "[-lnopq] FILE[.zip] [FILE]... [-x FILE...] [-d DIR]"
+//usage:#define unzip_full_usage "\n\n"
+//usage:       "Extract FILEs from ZIP archive\n"
+//usage:     "\n	-l	List contents (with -q for short form)"
+//usage:     "\n	-n	Never overwrite files (default: ask)"
+//usage:     "\n	-o	Overwrite"
+//usage:     "\n	-p	Print to stdout"
+//usage:     "\n	-q	Quiet"
+//usage:     "\n	-x FILE	Exclude FILEs"
+//usage:     "\n	-d DIR	Extract into DIR"
+
 #include "libbb.h"
-#include "unarchive.h"
+#include "bb_archive.h"
 
 enum {
 #if BB_BIG_ENDIAN
@@ -151,7 +174,17 @@ enum { zip_fd = 3 };
 
 #if ENABLE_DESKTOP
 
-#define PEEK_FROM_END 16384
+/* Seen in the wild:
+ * Self-extracting PRO2K3XP_32.exe contains 19078464 byte zip archive,
+ * where CDE was nearly 48 kbytes before EOF.
+ * (Surprisingly, it also apparently has *another* CDE structure
+ * closer to the end, with bogus cdf_offset).
+ * To make extraction work, bumped PEEK_FROM_END from 16k to 64k.
+ */
+#define PEEK_FROM_END (64*1024)
+
+/* This value means that we failed to find CDF */
+#define BAD_CDF_OFFSET ((uint32_t)0xffffffff)
 
 /* NB: does not preserve file position! */
 static uint32_t find_cdf_offset(void)
@@ -168,6 +201,7 @@ static uint32_t find_cdf_offset(void)
 	xlseek(zip_fd, end, SEEK_SET);
 	full_read(zip_fd, buf, PEEK_FROM_END);
 
+	cde_header.formatted.cdf_offset = BAD_CDF_OFFSET;
 	p = buf;
 	while (p <= buf + PEEK_FROM_END - CDE_HEADER_LEN - 4) {
 		if (*p != 'P') {
@@ -183,11 +217,17 @@ static uint32_t find_cdf_offset(void)
 		/* we found CDE! */
 		memcpy(cde_header.raw, p + 1, CDE_HEADER_LEN);
 		FIX_ENDIANNESS_CDE(cde_header);
-		free(buf);
-		return cde_header.formatted.cdf_offset;
+		/*
+		 * I've seen .ZIP files with seemingly valid CDEs
+		 * where cdf_offset points past EOF - ??
+		 * Ignore such CDEs:
+		 */
+		if (cde_header.formatted.cdf_offset < end + (p - buf))
+			break;
+		cde_header.formatted.cdf_offset = BAD_CDF_OFFSET;
 	}
-	//free(buf);
-	bb_error_msg_and_die("can't find file table");
+	free(buf);
+	return cde_header.formatted.cdf_offset;
 };
 
 static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
@@ -199,13 +239,15 @@ static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
 	if (!cdf_offset)
 		cdf_offset = find_cdf_offset();
 
-	xlseek(zip_fd, cdf_offset + 4, SEEK_SET);
-	xread(zip_fd, cdf_ptr->raw, CDF_HEADER_LEN);
-	FIX_ENDIANNESS_CDF(*cdf_ptr);
-	cdf_offset += 4 + CDF_HEADER_LEN
-		+ cdf_ptr->formatted.file_name_length
-		+ cdf_ptr->formatted.extra_field_length
-		+ cdf_ptr->formatted.file_comment_length;
+	if (cdf_offset != BAD_CDF_OFFSET) {
+		xlseek(zip_fd, cdf_offset + 4, SEEK_SET);
+		xread(zip_fd, cdf_ptr->raw, CDF_HEADER_LEN);
+		FIX_ENDIANNESS_CDF(*cdf_ptr);
+		cdf_offset += 4 + CDF_HEADER_LEN
+			+ cdf_ptr->formatted.file_name_length
+			+ cdf_ptr->formatted.extra_field_length
+			+ cdf_ptr->formatted.file_comment_length;
+	}
 
 	xlseek(zip_fd, org, SEEK_SET);
 	return cdf_offset;
@@ -214,8 +256,9 @@ static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
 
 static void unzip_skip(off_t skip)
 {
-	if (lseek(zip_fd, skip, SEEK_CUR) == (off_t)-1)
-		bb_copyfd_exact_size(zip_fd, -1, skip);
+	if (skip != 0)
+		if (lseek(zip_fd, skip, SEEK_CUR) == (off_t)-1)
+			bb_copyfd_exact_size(zip_fd, -1, skip);
 }
 
 static void unzip_create_leading_dirs(const char *fn)
@@ -223,7 +266,7 @@ static void unzip_create_leading_dirs(const char *fn)
 	/* Create all leading directories */
 	char *name = xstrdup(fn);
 	if (bb_make_directory(dirname(name), 0777, FILEUTILS_RECUR)) {
-		bb_error_msg_and_die("exiting"); /* bb_make_directory is noisy */
+		xfunc_die(); /* bb_make_directory is noisy */
 	}
 	free(name);
 }
@@ -237,19 +280,29 @@ static void unzip_extract(zip_header_t *zip_header, int dst_fd)
 			bb_copyfd_exact_size(zip_fd, dst_fd, size);
 	} else {
 		/* Method 8 - inflate */
-		inflate_unzip_result res;
-		if (inflate_unzip(&res, zip_header->formatted.cmpsize, zip_fd, dst_fd) < 0)
+		transformer_aux_data_t aux;
+		init_transformer_aux_data(&aux);
+		aux.bytes_in = zip_header->formatted.cmpsize;
+		if (inflate_unzip(&aux, zip_fd, dst_fd) < 0)
 			bb_error_msg_and_die("inflate error");
 		/* Validate decompression - crc */
-		if (zip_header->formatted.crc32 != (res.crc ^ 0xffffffffL)) {
+		if (zip_header->formatted.crc32 != (aux.crc32 ^ 0xffffffffL)) {
 			bb_error_msg_and_die("crc error");
 		}
 		/* Validate decompression - size */
-		if (zip_header->formatted.ucmpsize != res.bytes_out) {
+		if (zip_header->formatted.ucmpsize != aux.bytes_out) {
 			/* Don't die. Who knows, maybe len calculation
 			 * was botched somewhere. After all, crc matched! */
 			bb_error_msg("bad length");
 		}
+	}
+}
+
+static void my_fgets80(char *buf80)
+{
+	fflush_all();
+	if (!fgets(buf80, 80, stdin)) {
+		bb_perror_msg_and_die("can't read standard input");
 	}
 }
 
@@ -263,6 +316,7 @@ int unzip_main(int argc, char **argv)
 	IF_NOT_DESKTOP(const) smallint verbose = 0;
 	smallint listing = 0;
 	smallint overwrite = O_PROMPT;
+	smallint x_opt_seen;
 #if ENABLE_DESKTOP
 	uint32_t cdf_offset;
 #endif
@@ -276,8 +330,7 @@ int unzip_main(int argc, char **argv)
 	llist_t *zreject = NULL;
 	char *base_dir = NULL;
 	int i, opt;
-	int opt_range = 0;
-	char key_buf[80];
+	char key_buf[80]; /* must match size used by my_fgets80 */
 	struct stat stat_buf;
 
 /* -q, -l and -v: UnZip 5.52 of 28 February 2005, by Info-ZIP:
@@ -321,82 +374,81 @@ int unzip_main(int argc, char **argv)
  *    204372                   1 file
  */
 
+	x_opt_seen = 0;
 	/* '-' makes getopt return 1 for non-options */
 	while ((opt = getopt(argc, argv, "-d:lnopqxv")) != -1) {
-		switch (opt_range) {
-		case 0: /* Options */
-			switch (opt) {
-			case 'l': /* List */
-				listing = 1;
-				break;
+		switch (opt) {
+		case 'd':  /* Extract to base directory */
+			base_dir = optarg;
+			break;
 
-			case 'n': /* Never overwrite existing files */
-				overwrite = O_NEVER;
-				break;
+		case 'l': /* List */
+			listing = 1;
+			break;
 
-			case 'o': /* Always overwrite existing files */
-				overwrite = O_ALWAYS;
-				break;
+		case 'n': /* Never overwrite existing files */
+			overwrite = O_NEVER;
+			break;
 
-			case 'p': /* Extract files to stdout and fall through to set verbosity */
-				dst_fd = STDOUT_FILENO;
+		case 'o': /* Always overwrite existing files */
+			overwrite = O_ALWAYS;
+			break;
 
-			case 'q': /* Be quiet */
-				quiet++;
-				break;
+		case 'p': /* Extract files to stdout and fall through to set verbosity */
+			dst_fd = STDOUT_FILENO;
 
-			case 'v': /* Verbose list */
-				IF_DESKTOP(verbose++;)
-				listing = 1;
-				break;
+		case 'q': /* Be quiet */
+			quiet++;
+			break;
 
-			case 1: /* The zip file */
+		case 'v': /* Verbose list */
+			IF_DESKTOP(verbose++;)
+			listing = 1;
+			break;
+
+		case 'x':
+			x_opt_seen = 1;
+			break;
+
+		case 1:
+			if (!src_fn) {
+				/* The zip file */
 				/* +5: space for ".zip" and NUL */
 				src_fn = xmalloc(strlen(optarg) + 5);
 				strcpy(src_fn, optarg);
-				opt_range++;
-				break;
-
-			default:
-				bb_show_usage();
-
+			} else if (!x_opt_seen) {
+				/* Include files */
+				llist_add_to(&zaccept, optarg);
+			} else {
+				/* Exclude files */
+				llist_add_to(&zreject, optarg);
 			}
 			break;
-
-		case 1: /* Include files */
-			if (opt == 1) {
-				llist_add_to(&zaccept, optarg);
-				break;
-			}
-			if (opt == 'd') {
-				base_dir = optarg;
-				opt_range += 2;
-				break;
-			}
-			if (opt == 'x') {
-				opt_range++;
-				break;
-			}
-			bb_show_usage();
-
-		case 2 : /* Exclude files */
-			if (opt == 1) {
-				llist_add_to(&zreject, optarg);
-				break;
-			}
-			if (opt == 'd') { /* Extract to base directory */
-				base_dir = optarg;
-				opt_range++;
-				break;
-			}
-			/* fall through */
 
 		default:
 			bb_show_usage();
 		}
 	}
 
-	if (src_fn == NULL) {
+#ifndef __GLIBC__
+	/*
+	 * This code is needed for non-GNU getopt
+	 * which doesn't understand "-" in option string.
+	 * The -x option won't work properly in this case:
+	 * "unzip a.zip q -x w e" will be interpreted as
+	 * "unzip a.zip q w e -x" = "unzip a.zip q w e"
+	 */
+	argv += optind;
+	if (argv[0]) {
+		/* +5: space for ".zip" and NUL */
+		src_fn = xmalloc(strlen(argv[0]) + 5);
+		strcpy(src_fn, argv[0]);
+		while (*++argv)
+			llist_add_to(&zaccept, *argv);
+	}
+#endif
+
+	if (!src_fn) {
 		bb_show_usage();
 	}
 
@@ -407,17 +459,20 @@ int unzip_main(int argc, char **argv)
 		if (overwrite == O_PROMPT)
 			overwrite = O_NEVER;
 	} else {
-		static const char extn[][5] = {"", ".zip", ".ZIP"};
-		int orig_src_fn_len = strlen(src_fn);
-		int src_fd = -1;
+		static const char extn[][5] = { ".zip", ".ZIP" };
+		char *ext = src_fn + strlen(src_fn);
+		int src_fd;
 
-		for (i = 0; (i < 3) && (src_fd == -1); i++) {
-			strcpy(src_fn + orig_src_fn_len, extn[i]);
+		i = 0;
+		for (;;) {
 			src_fd = open(src_fn, O_RDONLY);
-		}
-		if (src_fd == -1) {
-			src_fn[orig_src_fn_len] = '\0';
-			bb_error_msg_and_die("can't open %s, %s.zip, %s.ZIP", src_fn, src_fn, src_fn);
+			if (src_fd >= 0)
+				break;
+			if (++i > 2) {
+				*ext = '\0';
+				bb_error_msg_and_die("can't open %s[.zip]", src_fn);
+			}
+			strcpy(ext, extn[i - 1]);
 		}
 		xmove_fd(src_fd, zip_fd);
 	}
@@ -504,20 +559,30 @@ int unzip_main(int argc, char **argv)
 			bb_error_msg_and_die("zip flag 1 (encryption) is not supported");
 		}
 
-		{
+		if (cdf_offset != BAD_CDF_OFFSET) {
 			cdf_header_t cdf_header;
 			cdf_offset = read_next_cdf(cdf_offset, &cdf_header);
+			/*
+			 * Note: cdf_offset can become BAD_CDF_OFFSET after the above call.
+			 */
 			if (zip_header.formatted.zip_flags & SWAP_LE16(0x0008)) {
 				/* 0x0008 - streaming. [u]cmpsize can be reliably gotten
-				 * only from Central Directory. See unzip_doc.txt */
+				 * only from Central Directory. See unzip_doc.txt
+				 */
 				zip_header.formatted.crc32    = cdf_header.formatted.crc32;
 				zip_header.formatted.cmpsize  = cdf_header.formatted.cmpsize;
 				zip_header.formatted.ucmpsize = cdf_header.formatted.ucmpsize;
 			}
 			if ((cdf_header.formatted.version_made_by >> 8) == 3) {
-				/* this archive is created on Unix */
+				/* This archive is created on Unix */
 				dir_mode = file_mode = (cdf_header.formatted.external_file_attributes >> 16);
 			}
+		}
+		if (cdf_offset == BAD_CDF_OFFSET
+		 && (zip_header.formatted.zip_flags & SWAP_LE16(0x0008))
+		) {
+			/* If it's a streaming zip, we _require_ CDF */
+			bb_error_msg_and_die("can't find file table");
 		}
 #endif
 
@@ -583,8 +648,8 @@ int unzip_main(int argc, char **argv)
 						printf("   creating: %s\n", dst_fn);
 					}
 					unzip_create_leading_dirs(dst_fn);
-					if (bb_make_directory(dst_fn, dir_mode, 0)) {
-						bb_error_msg_and_die("exiting");
+					if (bb_make_directory(dst_fn, dir_mode, FILEUTILS_IGNORE_CHMOD_ERR)) {
+						xfunc_die();
 					}
 				} else {
 					if (!S_ISDIR(stat_buf.st_mode)) {
@@ -608,9 +673,7 @@ int unzip_main(int argc, char **argv)
 							i = 'y';
 						} else {
 							printf("replace %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ", dst_fn);
-							if (!fgets(key_buf, sizeof(key_buf), stdin)) {
-								bb_perror_msg_and_die("can't read input");
-							}
+							my_fgets80(key_buf);
 							i = key_buf[0];
 						}
 					} else { /* File is not regular file */
@@ -651,9 +714,7 @@ int unzip_main(int argc, char **argv)
 		case 'r':
 			/* Prompt for new name */
 			printf("new name: ");
-			if (!fgets(key_buf, sizeof(key_buf), stdin)) {
-				bb_perror_msg_and_die("can't read input");
-			}
+			my_fgets80(key_buf);
 			free(dst_fn);
 			dst_fn = xstrdup(key_buf);
 			chomp(dst_fn);

@@ -4,8 +4,38 @@
 *
 * Copyright (C) 2010  Malek Degachi <malek-degachi@laposte.net>
 *
-* Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+* Licensed under GPLv2 or later, see file LICENSE in this source tree.
 */
+
+//config:config RFKILL
+//config:	bool "rfkill"
+//config:	default n # doesn't build on Ubuntu 9.04
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Enable/disable wireless devices.
+//config:
+//config:	  rfkill list : list all wireless devices
+//config:	  rfkill list bluetooth : list all bluetooth devices
+//config:	  rfkill list 1 : list device corresponding to the given index
+//config:	  rfkill block|unblock wlan : block/unblock all wlan(wifi) devices
+//config:
+
+//applet:IF_RFKILL(APPLET(rfkill, BB_DIR_USR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_RFKILL) += rfkill.o
+
+//usage:#define rfkill_trivial_usage
+//usage:       "COMMAND [INDEX|TYPE]"
+//usage:#define rfkill_full_usage "\n\n"
+//usage:       "Enable/disable wireless devices\n"
+//usage:       "\nCommands:"
+//usage:     "\n	list [INDEX|TYPE]	List current state"
+//usage:     "\n	block INDEX|TYPE	Disable device"
+//usage:     "\n	unblock INDEX|TYPE	Enable device"
+//usage:     "\n"
+//usage:     "\n	TYPE: all, wlan(wifi), bluetooth, uwb(ultrawideband),"
+//usage:     "\n		wimax, wwan, gps, fm"
+
 #include "libbb.h"
 #include <linux/rfkill.h>
 
@@ -53,7 +83,7 @@ int rfkill_main(int argc UNUSED_PARAM, char **argv)
 			rf_name = "uwb";
 		rf_type = index_in_strings(rfkill_types, rf_name);
 		if (rf_type < 0) {
-			rf_idx = xatoi_u(rf_name);
+			rf_idx = xatoi_positive(rf_name);
 		}
 	}
 

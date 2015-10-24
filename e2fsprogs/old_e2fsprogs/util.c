@@ -4,7 +4,7 @@
  *
  * Copyright 1995, 1996, 1997, 1998, 1999, 2000 by Theodore Ts'o.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include <stdio.h>
@@ -95,7 +95,6 @@ force_check:
 		bb_error_msg("%s is apparently in use by the system", device);
 		goto force_check;
 	}
-
 }
 
 void parse_journal_opts(char **journal_device, int *journal_flags,
@@ -118,7 +117,7 @@ void parse_journal_opts(char **journal_device, int *journal_flags,
 		}
 		if (strcmp(token, "device") == 0) {
 			*journal_device = blkid_get_devname(NULL, arg, NULL);
-			if (!journal_device) {
+			if (!*journal_device) {
 				journal_usage++;
 				continue;
 			}
@@ -240,7 +239,7 @@ void make_journal_blocks(ext2_filsys fs, int journal_size, int journal_flags, in
 		return;
 	}
 	if (!quiet)
-		printf("Creating journal (%ld blocks): ", journal_blocks);
+		printf("Creating journal (%lu blocks): ", journal_blocks);
 	fflush(stdout);
 	retval = ext2fs_add_journal_inode(fs, journal_blocks,
 						  journal_flags);

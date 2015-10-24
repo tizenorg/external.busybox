@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2001 Matt Kraai <kraai@alumni.carnegiemellon.edu>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -33,7 +33,7 @@ int FAST_FUNC remove_file(const char *path, int flags)
 		int status = 0;
 
 		if (!(flags & FILEUTILS_RECUR)) {
-			bb_error_msg("%s: is a directory", path);
+			bb_error_msg("'%s' is a directory", path);
 			return -1;
 		}
 

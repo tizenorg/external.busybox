@@ -4,8 +4,35 @@
  *
  * Copyright (C) 2007 Loic Grenie <loic.grenie@gmail.com>
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//usage:#define pgrep_trivial_usage
+//usage:       "[-flnovx] [-s SID|-P PPID|PATTERN]"
+//usage:#define pgrep_full_usage "\n\n"
+//usage:       "Display process(es) selected by regex PATTERN\n"
+//usage:     "\n	-l	Show command name too"
+//usage:     "\n	-f	Match against entire command line"
+//usage:     "\n	-n	Show the newest process only"
+//usage:     "\n	-o	Show the oldest process only"
+//usage:     "\n	-v	Negate the match"
+//usage:     "\n	-x	Match whole name (not substring)"
+//usage:     "\n	-s	Match session ID (0 for current)"
+//usage:     "\n	-P	Match parent process ID"
+//usage:
+//usage:#define pkill_trivial_usage
+//usage:       "[-l|-SIGNAL] [-fnovx] [-s SID|-P PPID|PATTERN]"
+//usage:#define pkill_full_usage "\n\n"
+//usage:       "Send a signal to process(es) selected by regex PATTERN\n"
+//usage:     "\n	-l	List all signals"
+//usage:     "\n	-f	Match against entire command line"
+//usage:     "\n	-n	Signal the newest process only"
+//usage:     "\n	-o	Signal the oldest process only"
+//usage:     "\n	-v	Negate the match"
+//usage:     "\n	-x	Match whole name (not substring)"
+//usage:     "\n	-s	Match session ID (0 for current)"
+//usage:     "\n	-P	Match parent process ID"
+
 #include "libbb.h"
 #include "xregex.h"
 
@@ -38,9 +65,9 @@ static void act(unsigned pid, char *cmd, int signo)
 {
 	if (pgrep) {
 		if (option_mask32 & (1 << OPTBIT_L)) /* OPT_LIST */
-			printf("%d %s\n", pid, cmd);
+			printf("%u %s\n", pid, cmd);
 		else
-			printf("%d\n", pid);
+			printf("%u\n", pid);
 	} else
 		kill(pid, signo);
 }
@@ -101,7 +128,7 @@ int pgrep_main(int argc UNUSED_PARAM, char **argv)
 		bb_show_usage();
 
 	if (argv[0])
-		xregcomp(&re_buffer, argv[0], 0);
+		xregcomp(&re_buffer, argv[0], OPT_ANCHOR ? REG_EXTENDED : (REG_EXTENDED|REG_NOSUB));
 
 	matched_pid = 0;
 	cmd_last = NULL;

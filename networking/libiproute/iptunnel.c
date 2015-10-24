@@ -1,16 +1,14 @@
 /* vi: set sw=4 ts=4: */
 /*
- * iptunnel.c	       "ip tunnel"
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
- *
- * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+ * Authors: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
  * Changes:
  *
- * Rani Assaf <rani@magic.metawire.com> 980929:	resolve addresses
- * Rani Assaf <rani@magic.metawire.com> 980930:	do not allow key for ipip/sit
- * Phil Karn <karn@ka9q.ampr.org>	990408:	"pmtudisc" flag
+ * Rani Assaf <rani@magic.metawire.com> 980929: resolve addresses
+ * Rani Assaf <rani@magic.metawire.com> 980930: do not allow key for ipip/sit
+ * Phil Karn <karn@ka9q.ampr.org>       990408: "pmtudisc" flag
  */
 
 #include <netinet/ip.h>
@@ -440,7 +438,7 @@ static void print_tunnel(struct ip_tunnel_parm *p)
 			printf(" inherit");
 		if (p->iph.tos & ~1)
 			printf("%c%s ", p->iph.tos & 1 ? '/' : ' ',
-			       rtnl_dsfield_n2a(p->iph.tos & ~1, b1));
+				rtnl_dsfield_n2a(p->iph.tos & ~1, b1));
 	}
 	if (!(p->iph.frag_off & htons(IP_DF)))
 		printf(" nopmtudisc");
@@ -556,16 +554,16 @@ static int do_show(char **argv)
 }
 
 /* Return value becomes exitcode. It's okay to not return at all */
-int do_iptunnel(char **argv)
+int FAST_FUNC do_iptunnel(char **argv)
 {
 	static const char keywords[] ALIGN1 =
 		"add\0""change\0""delete\0""show\0""list\0""lst\0";
 	enum { ARG_add = 0, ARG_change, ARG_del, ARG_show, ARG_list, ARG_lst };
 
 	if (*argv) {
-		smalluint key = index_in_substrings(keywords, *argv);
-		if (key > 5)
-			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+		int key = index_in_substrings(keywords, *argv);
+		if (key < 0)
+			invarg(*argv, applet_name);
 		argv++;
 		if (key == ARG_add)
 			return do_add(SIOCADDTUNNEL, argv);

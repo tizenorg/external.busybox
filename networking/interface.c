@@ -19,7 +19,7 @@
  * Author:      Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
  *              and others.  Copyright 1993 MicroWalt Corporation
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  * Patched to support 'add' and 'del' keywords for INET(4) addresses
  * by Mrs. Brisby <mrs.brisby@nimh.org>
@@ -27,18 +27,17 @@
  * {1.34} - 19980630 - Arnaldo Carvalho de Melo <acme@conectiva.com.br>
  *                     - gettext instead of catgets for i18n
  *          10/1998  - Andi Kleen. Use interface list primitives.
- *	    20001008 - Bernd Eckenfels, Patch from RH for setting mtu
+ *          20001008 - Bernd Eckenfels, Patch from RH for setting mtu
  *			(default AF was wrong)
  */
-#include <net/if.h>
-#include <net/if_arp.h>
-#if (defined(__GLIBC__) && __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1) || defined(_NEWLIB_VERSION)
-# include <net/ethernet.h>
-#else
-# include <linux/if_ether.h>
-#endif
+
 #include "libbb.h"
 #include "inet_common.h"
+#include <net/if.h>
+#include <net/if_arp.h>
+#ifdef HAVE_NET_ETHERNET_H
+# include <net/ethernet.h>
+#endif
 
 #if ENABLE_FEATURE_HWIB
 /* #include <linux/if_infiniband.h> */
@@ -723,67 +722,14 @@ static char* FAST_FUNC ether_print(unsigned char *ptr)
 	return buff;
 }
 
-static int FAST_FUNC ether_input(const char *bufp, struct sockaddr *sap);
-
 static const struct hwtype ether_hwtype = {
 	.name  = "ether",
 	.title = "Ethernet",
 	.type  = ARPHRD_ETHER,
 	.alen  = ETH_ALEN,
 	.print = ether_print,
-	.input = ether_input
+	.input = in_ether
 };
-
-static unsigned hexchar2int(char c)
-{
-	if (isdigit(c))
-		return c - '0';
-	c &= ~0x20; /* a -> A */
-	if ((unsigned)(c - 'A') <= 5)
-		return c - ('A' - 10);
-	return ~0U;
-}
-
-/* Input an Ethernet address and convert to binary. */
-static int FAST_FUNC ether_input(const char *bufp, struct sockaddr *sap)
-{
-	unsigned char *ptr;
-	char c;
-	int i;
-	unsigned val;
-
-	sap->sa_family = ether_hwtype.type;
-	ptr = (unsigned char*) sap->sa_data;
-
-	i = 0;
-	while ((*bufp != '\0') && (i < ETH_ALEN)) {
-		val = hexchar2int(*bufp++) * 0x10;
-		if (val > 0xff) {
-			errno = EINVAL;
-			return -1;
-		}
-		c = *bufp;
-		if (c == ':' || c == 0)
-			val >>= 4;
-		else {
-			val |= hexchar2int(c);
-			if (val > 0xff) {
-				errno = EINVAL;
-				return -1;
-			}
-		}
-		if (c != 0)
-			bufp++;
-		*ptr++ = (unsigned char) val;
-		i++;
-
-		/* We might get a semicolon here - not required. */
-		if (*bufp == ':') {
-			bufp++;
-		}
-	}
-	return 0;
-}
 
 static const struct hwtype ppp_hwtype = {
 	.name =		"ppp",
@@ -927,9 +873,8 @@ static void print_bytes_scaled(unsigned long long ull, const char *end)
 
 static void ife_print6(struct interface *ptr)
 {
-
 	FILE *f;
-	char addr6[40], devname[20];
+	char addr6[40], devname[21];
 	struct sockaddr_in6 sap;
 	int plen, scope, dad_status, if_idx;
 	char addr6p[8][5];
@@ -952,8 +897,8 @@ static void ife_print6(struct interface *ptr)
 					  (struct sockaddr *) &sap.sin6_addr);
 			sap.sin6_family = AF_INET6;
 			printf("          inet6 addr: %s/%d",
-				   INET6_sprint((struct sockaddr *) &sap, 1),
-				   plen);
+				INET6_sprint((struct sockaddr *) &sap, 1),
+				plen);
 			printf(" Scope:");
 			switch (scope & IPV6_ADDR_SCOPE_MASK) {
 			case 0:
@@ -1021,7 +966,7 @@ static void ife_print(struct interface *ptr)
 
 	if (ptr->has_ip) {
 		printf("          %s addr:%s ", ap->name,
-			   ap->sprint(&ptr->addr, 1));
+			ap->sprint(&ptr->addr, 1));
 		if (ptr->flags & IFF_POINTOPOINT) {
 			printf(" P-t-P:%s ", ap->sprint(&ptr->dstaddr, 1));
 		}
@@ -1104,17 +1049,17 @@ static void ife_print(struct interface *ptr)
 		printf("          ");
 
 		printf("RX packets:%llu errors:%lu dropped:%lu overruns:%lu frame:%lu\n",
-			   ptr->stats.rx_packets, ptr->stats.rx_errors,
-			   ptr->stats.rx_dropped, ptr->stats.rx_fifo_errors,
-			   ptr->stats.rx_frame_errors);
+			ptr->stats.rx_packets, ptr->stats.rx_errors,
+			ptr->stats.rx_dropped, ptr->stats.rx_fifo_errors,
+			ptr->stats.rx_frame_errors);
 		if (can_compress)
 			printf("             compressed:%lu\n",
-				   ptr->stats.rx_compressed);
+				ptr->stats.rx_compressed);
 		printf("          ");
 		printf("TX packets:%llu errors:%lu dropped:%lu overruns:%lu carrier:%lu\n",
-			   ptr->stats.tx_packets, ptr->stats.tx_errors,
-			   ptr->stats.tx_dropped, ptr->stats.tx_fifo_errors,
-			   ptr->stats.tx_carrier_errors);
+			ptr->stats.tx_packets, ptr->stats.tx_errors,
+			ptr->stats.tx_dropped, ptr->stats.tx_fifo_errors,
+			ptr->stats.tx_carrier_errors);
 		printf("          collisions:%lu ", ptr->stats.collisions);
 		if (can_compress)
 			printf("compressed:%lu ", ptr->stats.tx_compressed);
@@ -1131,13 +1076,12 @@ static void ife_print(struct interface *ptr)
 		printf("          ");
 		if (ptr->map.irq)
 			printf("Interrupt:%d ", ptr->map.irq);
-		if (ptr->map.base_addr >= 0x100)	/* Only print devices using it for
-											   I/O maps */
+		if (ptr->map.base_addr >= 0x100) /* Only print devices using it for I/O maps */
 			printf("Base address:0x%lx ",
-				   (unsigned long) ptr->map.base_addr);
+				(unsigned long) ptr->map.base_addr);
 		if (ptr->map.mem_start) {
 			printf("Memory:%lx-%lx ", ptr->map.mem_start,
-				   ptr->map.mem_end);
+				ptr->map.mem_end);
 		}
 		if (ptr->map.dma)
 			printf("DMA chan:%x ", ptr->map.dma);
@@ -1170,7 +1114,7 @@ static struct interface *lookup_interface(char *name)
 
 #ifdef UNUSED
 static int for_all_interfaces(int (*doit) (struct interface *, void *),
-							  void *cookie)
+							void *cookie)
 {
 	struct interface *ife;
 

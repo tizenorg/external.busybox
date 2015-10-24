@@ -8,7 +8,7 @@
  *
  * Copyright 1995, 1996, 1997, 1998, 1999, 2000 by Theodore Ts'o.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /*
@@ -607,7 +607,7 @@ int tune2fs_main(int argc, char **argv)
 	if (e_flag) {
 		sb->s_errors = errors;
 		ext2fs_mark_super_dirty(fs);
-		printf("Setting error behavior to %d\n", errors);
+		printf("Setting error behavior to %u\n", errors);
 	}
 	if (g_flag) {
 		sb->s_def_resgid = resgid;

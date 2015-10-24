@@ -7,11 +7,35 @@
  * Some helper functions from bridge-utils are
  * Copyright (C) 2000 Lennert Buytenhek
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 /* This applet currently uses only the ioctl interface and no sysfs at all.
  * At the time of this writing this was considered a feature.
  */
+
+//usage:#define brctl_trivial_usage
+//usage:       "COMMAND [BRIDGE [INTERFACE]]"
+//usage:#define brctl_full_usage "\n\n"
+//usage:       "Manage ethernet bridges\n"
+//usage:     "\nCommands:"
+//usage:	IF_FEATURE_BRCTL_SHOW(
+//usage:     "\n	show			Show a list of bridges"
+//usage:	)
+//usage:     "\n	addbr BRIDGE		Create BRIDGE"
+//usage:     "\n	delbr BRIDGE		Delete BRIDGE"
+//usage:     "\n	addif BRIDGE IFACE	Add IFACE to BRIDGE"
+//usage:     "\n	delif BRIDGE IFACE	Delete IFACE from BRIDGE"
+//usage:	IF_FEATURE_BRCTL_FANCY(
+//usage:     "\n	setageing BRIDGE TIME		Set ageing time"
+//usage:     "\n	setfd BRIDGE TIME		Set bridge forward delay"
+//usage:     "\n	sethello BRIDGE TIME		Set hello time"
+//usage:     "\n	setmaxage BRIDGE TIME		Set max message age"
+//usage:     "\n	setpathcost BRIDGE COST		Set path cost"
+//usage:     "\n	setportprio BRIDGE PRIO		Set port priority"
+//usage:     "\n	setbridgeprio BRIDGE PRIO	Set bridge priority"
+//usage:     "\n	stp BRIDGE [1/yes/on|0/no/off]	STP on/off"
+//usage:	)
+
 #include "libbb.h"
 #include <linux/sockios.h>
 #include <net/if.h>
@@ -43,7 +67,7 @@
 # include <linux/if_bridge.h>
 
 /* FIXME: These 4 funcs are not really clean and could be improved */
-static ALWAYS_INLINE void strtotimeval(struct timeval *tv,
+static ALWAYS_INLINE void bb_strtotimeval(struct timeval *tv,
 		const char *time_str)
 {
 	double secs;
@@ -80,7 +104,7 @@ static void jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
 static unsigned long str_to_jiffies(const char *time_str)
 {
 	struct timeval tv;
-	strtotimeval(&tv, time_str);
+	bb_strtotimeval(&tv, time_str);
 	return tv_to_jiffies(&tv);
 }
 
@@ -105,15 +129,15 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
 		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
 	)
-	IF_FEATURE_BRCTL_SHOW("showmacs\0" "show\0");
+	IF_FEATURE_BRCTL_SHOW("show\0");
 
 	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
 		IF_FEATURE_BRCTL_FANCY(,
-		   ARG_stp,
-		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
-		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
+			ARG_stp,
+			ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
+			ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
 		)
-		IF_FEATURE_BRCTL_SHOW(, ARG_showmacs, ARG_show)
+		IF_FEATURE_BRCTL_SHOW(, ARG_show)
 	};
 
 	int fd;
@@ -184,7 +208,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 						tabs = 1;
 					printf("\t\t%s\n", ifname);
 				}
-				if (!tabs)	/* bridge has no interfaces */
+				if (!tabs)  /* bridge has no interfaces */
 					bb_putchar('\n');
 			}
 			goto done;
@@ -261,7 +285,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 					bb_error_msg_and_die(bb_msg_invalid_arg, *argv, "port");
 				memset(ifidx, 0, sizeof ifidx);
 				arm_ioctl(args, BRCTL_GET_PORT_LIST, (unsigned long)ifidx,
-						  MAX_PORTS);
+						MAX_PORTS);
 				xioctl(fd, SIOCDEVPRIVATE, &ifr);
 				for (i = 0; i < MAX_PORTS; i++) {
 					if (ifidx[i] == port) {
@@ -271,7 +295,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 				}
 			}
 			arg1 = port;
-			arg2 = xatoi_u(*argv);
+			arg2 = xatoi_positive(*argv);
 			if (key == ARG_setbridgeprio) {
 				arg1 = arg2;
 				arg2 = 0;

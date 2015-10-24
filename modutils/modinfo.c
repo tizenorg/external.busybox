@@ -3,16 +3,17 @@
  * modinfo - retrieve module info
  * Copyright (c) 2008 Pascal Bellard
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
-//applet:IF_MODINFO(APPLET(modinfo, _BB_DIR_SBIN, _BB_SUID_DROP))
+//applet:IF_MODINFO(APPLET(modinfo, BB_DIR_SBIN, BB_SUID_DROP))
 
 //kbuild:lib-$(CONFIG_MODINFO) += modinfo.o modutils.o
 
 //config:config MODINFO
 //config:	bool "modinfo"
 //config:	default y
+//config:	select PLATFORM_LINUX
 //config:	help
 //config:	  Show information about a Linux Kernel module
 
@@ -23,9 +24,9 @@
 
 
 enum {
-	OPT_TAGS = (1 << 6) - 1,
-	OPT_F = (1 << 6), /* field name */
-	OPT_0 = (1 << 7),  /* \0 as separator */
+	OPT_TAGS = (1 << 12) - 1, /* shortcut count */
+	OPT_F = (1 << 12), /* field name */
+	OPT_0 = (1 << 13), /* \0 as separator */
 };
 
 struct modinfo_env {
@@ -44,15 +45,21 @@ static int display(const char *data, const char *pattern, int flag)
 }
 
 static void modinfo(const char *path, const char *version,
-			struct modinfo_env *env)
+			const struct modinfo_env *env)
 {
 	static const char *const shortcuts[] = {
 		"filename",
-		"description",
-		"author",
 		"license",
+		"author",
+		"description",
+		"version",
+		"alias",
+		"srcversion",
+		"depends",
+		"uts_release",
 		"vermagic",
 		"parm",
+		"firmware",
 	};
 	size_t len;
 	int j, length;
@@ -80,11 +87,13 @@ static void modinfo(const char *path, const char *version,
 	if (field)
 		tags |= OPT_F;
 	for (j = 1; (1<<j) & (OPT_TAGS + OPT_F); j++) {
-		const char *pattern = field;
-		if ((1<<j) & OPT_TAGS)
-			pattern = shortcuts[j];
+		const char *pattern;
+
 		if (!((1<<j) & tags))
 			continue;
+		pattern = field;
+		if ((1<<j) & OPT_TAGS)
+			pattern = shortcuts[j];
 		length = strlen(pattern);
 		ptr = the_module;
 		while (1) {
@@ -92,8 +101,11 @@ static void modinfo(const char *path, const char *version,
 			if (ptr == NULL) /* no occurance left, done */
 				break;
 			if (strncmp(ptr, pattern, length) == 0 && ptr[length] == '=') {
-				ptr += length + 1;
-				ptr += display(ptr, pattern, (1<<j) != tags);
+				/* field prefixes are 0x80 or 0x00 */
+				if ((ptr[-1] & 0x7F) == '\0') {
+					ptr += length + 1;
+					ptr += display(ptr, pattern, (1<<j) != tags);
+				}
 			}
 			++ptr;
 		}
@@ -104,8 +116,7 @@ static void modinfo(const char *path, const char *version,
 //usage:#define modinfo_trivial_usage
 //usage:       "[-adlp0] [-F keyword] MODULE"
 //usage:#define modinfo_full_usage "\n\n"
-//usage:       "Options:"
-//usage:     "\n	-a		Shortcut for '-F author'"
+//usage:       "	-a		Shortcut for '-F author'"
 //usage:     "\n	-d		Shortcut for '-F description'"
 //usage:     "\n	-l		Shortcut for '-F license'"
 //usage:     "\n	-p		Shortcut for '-F parm'"
@@ -127,7 +138,7 @@ int modinfo_main(int argc UNUSED_PARAM, char **argv)
 
 	env.field = NULL;
 	opt_complementary = "-1"; /* minimum one param */
-	opts = getopt32(argv, "fdalvpF:0", &env.field);
+	opts = getopt32(argv, "nladvAsDumpF:0", &env.field);
 	env.tags = opts & OPT_TAGS ? opts & OPT_TAGS : OPT_TAGS;
 	argv += optind;
 

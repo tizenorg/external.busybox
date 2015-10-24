@@ -18,6 +18,17 @@
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//kbuild:lib-$(CONFIG_FEATURE_VOLUMEID_LINUXSWAP) += linux_swap.o
+
+//config:
+//config:config FEATURE_VOLUMEID_LINUXSWAP
+//config:	bool "linux swap filesystem"
+//config:	default y
+//config:	depends on VOLUMEID
+//config:	help
+//config:	  TODO
+//config:
+
 #include "volume_id_internal.h"
 
 struct swap_header_v1_2 {
@@ -72,7 +83,7 @@ int FAST_FUNC volume_id_probe_linux_swap(struct volume_id *id /*,uint64_t off*/)
 
 found:
 //	volume_id_set_usage(id, VOLUME_ID_OTHER);
-//	id->type = "swap";
+	IF_FEATURE_BLKID_TYPE(id->type = "swap";)
 
 	return 0;
 }

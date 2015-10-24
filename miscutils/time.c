@@ -2,14 +2,21 @@
 /* 'time' utility to display resource usage of processes.
    Copyright (C) 1990, 91, 92, 93, 96 Free Software Foundation, Inc.
 
-   Licensed under GPL version 2, see file LICENSE in this tarball for details.
+   Licensed under GPLv2, see file LICENSE in this source tree.
 */
 /* Originally written by David Keppel <pardo@cs.washington.edu>.
    Heavily modified by David MacKenzie <djm@gnu.ai.mit.edu>.
    Heavily modified for busybox by Erik Andersen <andersen@codepoet.org>
 */
 
+//usage:#define time_trivial_usage
+//usage:       "[-v] PROG ARGS"
+//usage:#define time_full_usage "\n\n"
+//usage:       "Run PROG, display resource usage when it exits\n"
+//usage:     "\n	-v	Verbose"
+
 #include "libbb.h"
+#include <sys/resource.h> /* getrusage */
 
 /* Information on the resources used by a child process.  */
 typedef struct {
@@ -63,7 +70,7 @@ static void resuse_end(pid_t pid, resource_t *resp)
 	pid_t caught;
 
 	/* Ignore signals, but don't ignore the children.  When wait3
-	   returns the child process, set the time the command finished. */
+	 * returns the child process, set the time the command finished. */
 	while ((caught = wait3(&resp->waitstatus, 0, &resp->ru)) != pid) {
 		if (caught == -1 && errno != EINTR) {
 			bb_perror_msg("wait");

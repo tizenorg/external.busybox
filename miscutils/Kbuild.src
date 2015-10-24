@@ -2,7 +2,7 @@
 #
 # Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
 #
-# Licensed under the GPL v2, see the file LICENSE in this tarball.
+# Licensed under GPLv2, see file LICENSE in this source tree.
 
 lib-y:=
 
@@ -36,7 +36,6 @@ lib-$(CONFIG_MOUNTPOINT)  += mountpoint.o
 lib-$(CONFIG_MT)          += mt.o
 lib-$(CONFIG_RAIDAUTORUN) += raidautorun.o
 lib-$(CONFIG_READAHEAD)   += readahead.o
-lib-$(CONFIG_RFKILL)      += rfkill.o
 lib-$(CONFIG_RUNLEVEL)    += runlevel.o
 lib-$(CONFIG_RX)          += rx.o
 lib-$(CONFIG_SETSID)      += setsid.o
@@ -46,5 +45,4 @@ lib-$(CONFIG_TIME)        += time.o
 lib-$(CONFIG_TIMEOUT)     += timeout.o
 lib-$(CONFIG_TTYSIZE)     += ttysize.o
 lib-$(CONFIG_VOLNAME)     += volname.o
-lib-$(CONFIG_WALL)        += wall.o
 lib-$(CONFIG_WATCHDOG)    += watchdog.o

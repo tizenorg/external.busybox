@@ -7,8 +7,26 @@
  * Adjusted by Erik Andersen <andersen@codepoet.org> to remove
  * use of long options and GNU getopt.  Improved the usage info.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//usage:#define hostname_trivial_usage
+//usage:       "[OPTIONS] [HOSTNAME | -F FILE]"
+//usage:#define hostname_full_usage "\n\n"
+//usage:       "Get or set hostname or DNS domain name\n"
+//usage:     "\n	-s	Short"
+//usage:     "\n	-i	Addresses for the hostname"
+//usage:     "\n	-d	DNS domain name"
+//usage:     "\n	-f	Fully qualified domain name"
+//usage:     "\n	-F FILE	Use FILE's content as hostname"
+//usage:
+//usage:#define hostname_example_usage
+//usage:       "$ hostname\n"
+//usage:       "sage\n"
+//usage:
+//usage:#define dnsdomainname_trivial_usage NOUSAGE_STR
+//usage:#define dnsdomainname_full_usage ""
+
 #include "libbb.h"
 
 static void do_sethostname(char *s, int isfile)
@@ -88,7 +106,7 @@ int hostname_main(int argc UNUSED_PARAM, char **argv)
 		OPT_i = 0x4,
 		OPT_s = 0x8,
 		OPT_F = 0x10,
-		OPT_dfis = 0xf,
+		OPT_dfi = 0x7,
 	};
 
 	unsigned opts;
@@ -116,7 +134,7 @@ int hostname_main(int argc UNUSED_PARAM, char **argv)
 	if (applet_name[0] == 'd') /* dnsdomainname? */
 		opts = OPT_d;
 
-	if (opts & OPT_dfis) {
+	if (opts & OPT_dfi) {
 		/* Cases when we need full hostname (or its part) */
 		struct hostent *hp;
 		char *p;
@@ -135,12 +153,15 @@ int hostname_main(int argc UNUSED_PARAM, char **argv)
 			if (hp->h_length == sizeof(struct in_addr)) {
 				struct in_addr **h_addr_list = (struct in_addr **)hp->h_addr_list;
 				while (*h_addr_list) {
-					printf("%s ", inet_ntoa(**h_addr_list));
+					printf(h_addr_list[1] ? "%s " : "%s", inet_ntoa(**h_addr_list));
 					h_addr_list++;
 				}
 				bb_putchar('\n');
 			}
 		}
+	} else if (opts & OPT_s) {
+		strchrnul(buf, '.')[0] = '\0';
+		puts(buf);
 	} else if (opts & OPT_F) {
 		/* Set the hostname */
 		do_sethostname(hostname_str, 1);

@@ -1,7 +1,0 @@
-bin/busybox usr/sbin/arp
-bin/busybox sbin/ifconfig
-bin/busybox sbin/iptunnel
-bin/busybox sbin/nameif
-bin/busybox bin/netstat
-bin/busybox sbin/route
-bin/busybox sbin/slattach

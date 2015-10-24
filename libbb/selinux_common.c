@@ -4,13 +4,13 @@
  *
  * Copyright 2007 KaiGai Kohei <kaigai@kaigai.gr.jp>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 #include <selinux/context.h>
 
 context_t FAST_FUNC set_security_context_component(security_context_t cur_context,
-					 char *user, char *role, char *type, char *range)
+			char *user, char *role, char *type, char *range)
 {
 	context_t con = context_new(cur_context);
 	if (!con)
@@ -53,4 +53,3 @@ void FAST_FUNC selinux_preserve_fcontext(int fdesc)
 	setfscreatecon_or_die(context);
 	freecon(context);
 }
-

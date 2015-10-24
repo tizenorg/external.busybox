@@ -18,6 +18,17 @@
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//kbuild:lib-$(CONFIG_FEATURE_VOLUMEID_SYSV) += sysv.o
+
+//config:
+//config:config FEATURE_VOLUMEID_SYSV
+//config:	bool "sysv filesystem"
+//config:	default y
+//config:	depends on VOLUMEID
+//config:	help
+//config:	  TODO
+//config:
+
 #include "volume_id_internal.h"
 
 #define SYSV_NICINOD			100
@@ -99,7 +110,7 @@ int FAST_FUNC volume_id_probe_sysv(struct volume_id *id /*,uint64_t off*/)
 		if (vs->s_magic == cpu_to_le32(SYSV_MAGIC) || vs->s_magic == cpu_to_be32(SYSV_MAGIC)) {
 //			volume_id_set_label_raw(id, vs->s_fname, 6);
 			volume_id_set_label_string(id, vs->s_fname, 6);
-//			id->type = "sysv";
+			IF_FEATURE_BLKID_TYPE(id->type = "sysv");
 			goto found;
 		}
 	}
@@ -112,7 +123,7 @@ int FAST_FUNC volume_id_probe_sysv(struct volume_id *id /*,uint64_t off*/)
 		if (xs->s_magic == cpu_to_le32(XENIX_MAGIC) || xs->s_magic == cpu_to_be32(XENIX_MAGIC)) {
 //			volume_id_set_label_raw(id, xs->s_fname, 6);
 			volume_id_set_label_string(id, xs->s_fname, 6);
-//			id->type = "xenix";
+			IF_FEATURE_BLKID_TYPE(id->type = "xenix";)
 			goto found;
 		}
 	}

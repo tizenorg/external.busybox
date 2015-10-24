@@ -18,6 +18,17 @@
  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//kbuild:lib-$(CONFIG_FEATURE_VOLUMEID_FAT) += fat.o
+
+//config:
+//config:config FEATURE_VOLUMEID_FAT
+//config:	bool "fat filesystem"
+//config:	default y
+//config:	depends on VOLUMEID
+//config:	help
+//config:	  TODO
+//config:
+
 #include "volume_id_internal.h"
 
 /* linux/msdos_fs.h says: */
@@ -332,7 +343,7 @@ int FAST_FUNC volume_id_probe_vfat(struct volume_id *id /*,uint64_t fat_partitio
 
  ret:
 //	volume_id_set_usage(id, VOLUME_ID_FILESYSTEM);
-//	id->type = "vfat";
+	IF_FEATURE_BLKID_TYPE(id->type = "vfat";)
 
 	return 0;
 }

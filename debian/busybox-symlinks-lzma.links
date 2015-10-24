@@ -1,3 +1,0 @@
-bin/busybox usr/bin/lzcat
-bin/busybox usr/bin/lzma
-bin/busybox usr/bin/unlzma

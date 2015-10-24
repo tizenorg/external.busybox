@@ -5,15 +5,21 @@
  *
  * Copyright (C) 2007 Denys Vlasenko <vda.linux@googlemail.com>
  *
- * Licensed under GPLv2, see file License in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
+
+#undef ARRAY_SIZE
+#define ARRAY_SIZE(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
 
 #include "../include/autoconf.h"
-#include "../include/busybox.h"
+#include "../include/applet_metadata.h"
 
 struct bb_applet {
 	const char *name;
@@ -47,7 +53,7 @@ int main(int argc, char **argv)
 {
 	int i;
 	int ofs;
-	unsigned MAX_APPLET_NAME_LEN = 1;
+//	unsigned MAX_APPLET_NAME_LEN = 1;
 
 	qsort(applets, NUM_APPLETS, sizeof(applets[0]), cmp_name);
 
@@ -75,7 +81,7 @@ int main(int argc, char **argv)
 	printf("#define NUM_APPLETS %u\n", NUM_APPLETS);
 	if (NUM_APPLETS == 1) {
 		printf("#define SINGLE_APPLET_STR \"%s\"\n", applets[0].name);
-		printf("#define SINGLE_APPLET_MAIN %s_main\n", applets[0].name);
+		printf("#define SINGLE_APPLET_MAIN %s_main\n", applets[0].main);
 	}
 	printf("\n");
 
@@ -83,8 +89,8 @@ int main(int argc, char **argv)
 	printf("const char applet_names[] ALIGN1 = \"\"\n");
 	for (i = 0; i < NUM_APPLETS; i++) {
 		printf("\"%s\" \"\\0\"\n", applets[i].name);
-		if (MAX_APPLET_NAME_LEN < strlen(applets[i].name))
-			MAX_APPLET_NAME_LEN = strlen(applets[i].name);
+//		if (MAX_APPLET_NAME_LEN < strlen(applets[i].name))
+//			MAX_APPLET_NAME_LEN = strlen(applets[i].name);
 	}
 	printf(";\n\n");
 
@@ -124,8 +130,8 @@ int main(int argc, char **argv)
 	printf("};\n");
 #endif
 	//printf("#endif /* SKIP_definitions */\n");
-	printf("\n");
-	printf("#define MAX_APPLET_NAME_LEN %u\n", MAX_APPLET_NAME_LEN);
+//	printf("\n");
+//	printf("#define MAX_APPLET_NAME_LEN %u\n", MAX_APPLET_NAME_LEN);
 
 	if (argv[2]) {
 		char line_old[80];
